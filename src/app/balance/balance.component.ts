@@ -7,7 +7,7 @@ import { MessageService } from 'primeng/api';
 @Component({
   selector: 'app-balance',
   templateUrl: './balance.component.html',
-  providers: [MessageService],
+  providers: [MessageService, ProductService],
   styleUrls: ['./balance.component.css']
 })
 export class BalanceComponent implements OnInit {
@@ -19,7 +19,7 @@ export class BalanceComponent implements OnInit {
   statuses: SelectItem[] = [];
   clonedProducts: { [s: string]: Product; } = {};
 
-  constructor(private productService: ProductService, private messageService: MessageService) { }
+  constructor(public productService: ProductService, private messageService: MessageService) { }
 
   ngOnInit() {
       this.productService.getProductsSmall().then(data => this.products1 = data);
