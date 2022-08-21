@@ -1,4 +1,6 @@
-
+/**
+ *
+*/
 class Equality {
 
   public static eqs(a : String | string, b : String | string, ignorecase : boolean) : boolean {
@@ -8,6 +10,13 @@ class Equality {
     return eq(a, b);
   }
 
+  /**
+   * desf
+   * @param a
+   * @param b
+   * @param c
+   * @returns
+   */
   public static eq<T>(a : T, b : T, ...c : T[]) : boolean {
 
     let ret = true;
@@ -104,6 +113,12 @@ const NullSafe = {
     return ret;
   },
 
+  /**
+   *
+   * @param array
+   * @param func
+   * @returns
+   */
   iterateFunction<T>(array : any[], func : (a : any) => T) : T | any {
 
     for(var i = 0; nsc(array) && i < array.length; i++) {
@@ -119,4 +134,7 @@ const NullSafe = {
 
 }
 
+/**
+ * xcs
+ */
 const { nsc, nsce, emp, nvl, nvle } = NullSafe;
