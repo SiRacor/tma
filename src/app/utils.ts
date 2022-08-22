@@ -1,7 +1,7 @@
 /**
  *
 */
-class Equality {
+export class Equality {
 
   public static eqs(a : String | string, b : String | string, ignorecase : boolean) : boolean {
     let s1 : String = nsc(a) ? ignorecase ? a.toLowerCase().trim() : a.trim() : a;
@@ -29,8 +29,8 @@ class Equality {
 
       ret = a === b
         || a == b
-        || Object.getPrototypeOf(a) === Object.getPrototypeOf(b)
-        || JSON.stringify(a) == JSON.stringify(b);
+        || (Object.getPrototypeOf(a) === Object.getPrototypeOf(b)
+            && JSON.stringify(a) == JSON.stringify(b));
     }
 
     if (ret) {
@@ -49,9 +49,9 @@ interface Class<T> {
   new: (...args: any[]) => T;
 }
 
-const { eq } = Equality;
+const { eq, neq } = Equality;
 
-const NullSafe = {
+export const NullSafe = {
 
   nsc<T, U>(a : T, ...b : U[]) : boolean {
     return a != undefined && a !== undefined
@@ -102,7 +102,7 @@ const NullSafe = {
 
     let ret = true;
 
-    for(var i = 0; nsc(array) && ret && i < array.length; i++) {
+    for(var i = 0; array != undefined && ret && i < array.length; i++) {
 
       if (!func(array[i])) {
         ret = false;
