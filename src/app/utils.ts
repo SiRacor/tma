@@ -1,3 +1,6 @@
+import { PrefixNot } from "@angular/compiler";
+import { __spreadArrays } from "tslib";
+
 /**
  *
 */
@@ -98,6 +101,11 @@ export const NullSafe = {
       return NullSafe.iterateFunction(b, (v) => nvle(v));
   },
 
+  nvls<T, U extends () => T>(a : U | any, ...b : U[]) : T {
+    	if (nsce(a())) return a;
+      return NullSafe.iterateFunction(b, (v) => nvls(v));
+  },
+
   iteratePredicate(array : any[], func : (a : any) => boolean) : boolean {
 
     let ret = true;
@@ -137,4 +145,117 @@ export const NullSafe = {
 /**
  * xcs
  */
-const { nsc, nsce, emp, nvl, nvle } = NullSafe;
+const { nsc, nsce, emp, nvl, nvle, nvls } = NullSafe;
+
+type DescribableFunction = {
+  (someArg: number): boolean;
+}
+
+export class Stream {
+
+  public static filter<T>(list: T[] | Iterable<T>, filter : (arg: T) => boolean): T[] | null {
+
+    if (!nsc(list, filter)) {
+      return null;
+    }
+
+    let ret : T[] = new Array();
+
+    let buffer : T[] = (Array.isArray(list)) ? list : Array.from(list);
+
+    buffer?.forEach((item) => {
+      if (nsc(item) && (!filter || filter(item))) {
+          ret.push(item);
+      }
+    })
+
+    return ret;
+  }
+
+  public static forEach<T>(list: T[] | Iterable<T>, consumer : (arg: T) => void) : void;
+  public static forEach<T>(list: T[] | Iterable<T>, consumer : (arg: T) => void, preFilter? : (arg: T) => boolean) : void;
+  public static forEach<T>(list: T[] | Iterable<T>, consumer : (arg: T) => void, preFilter? : (arg: T) => boolean) : void {
+
+    if (!nsc(list, consumer)) {
+      return;
+    }
+
+    let buffer : T[] = (Array.isArray(list)) ? list : Array.from(list);
+
+    buffer.forEach((item) => {
+      if (nsc(preFilter, item) && preFilter?.(item)) {
+        consumer(item);
+      }
+    });
+  }
+
+  public static toSet<T, R>(list: T[] | Iterable<T>, func : (arg: T) => R) : Set<R> | null;
+  public static toSet<T, R>(list: T[] | Iterable<T>, func : (arg: T) => R, preFilter : (arg: T) => boolean) : Set<R> | null;
+  public static toSet<T, R>(list: T[] | Iterable<T>, func : (arg: T) => R, preFilter? : (arg: T) => boolean, postFilter? : (arg: R) => boolean) : Set<R>;
+  public static toSet<T, R>(list: T[] | Iterable<T>, func : (arg: T) => R, preFilter? : (arg: T) => boolean, postFilter? : (arg: R) => boolean) : Set<R> | null {
+
+    let buffer : R[] | null = Stream.toArray(list, func, preFilter);
+    return buffer ? new Set(buffer) : null;
+  }
+
+  public static toArray<T, R>(list: T[] | Iterable<T>, func : (arg: T) => R) : R[] | null;
+  public static toArray<T, R>(list: T[] | Iterable<T>, func : (arg: T) => R, preFilter : (arg: T) => boolean) : R[] | null;
+  public static toArray<T, R>(list: T[] | Iterable<T>, func? : (arg: T) => R, preFilter? : (arg: T) => boolean, postFilter? : (arg: R) => boolean) : R[] | null;
+  public static toArray<T, R>(list: T[] | Iterable<T>, func? : (arg: T) => R, preFilter? : (arg: T) => boolean, postFilter? : (arg: R) => boolean) : R[] | null {
+
+    if (!nsc(list, func) || !func) {
+      return null;
+    }
+
+    let ret : R[] = new Array();
+    let buffer : T[] = (Array.isArray(list)) ? list : Array.from(list);
+
+    buffer.forEach((item) => {
+      if (nsc(item) && (!preFilter || preFilter(item))) {
+
+        let r : R = func(item);
+
+        if (nsc(r) && (!postFilter || postFilter(r))) {
+          ret.push(r);
+        }
+      }
+    })
+
+    return ret;
+  }
+
+  public static toMap<T, K, V, E extends { key : K, value : V }>(list: T[] | Iterable<T>, func : (arg: T) => E): Map<K, V> | null;
+  public static toMap<T, K, V, E extends { key : K, value : V }>(list: T[] | Iterable<T>, func : (arg: T) => E, preFilter? : (arg: T) => boolean): Map<K, V> | null;
+  public static toMap<T, K, V, E extends { key : K, value : V }>(list: T[] | Iterable<T>, func : (arg: T) => E, preFilter? : (arg: T) => boolean, postFilter? : (arg: E) => boolean): Map<K, V> | null;
+  public static toMap<T, K, V, E extends { key : K, value : V }>(list: T[] | Iterable<T>, func : (arg: T) => E, preFilter? : (arg: T) => boolean, postFilter? : (arg: E) => boolean): Map<K, V> | null {
+
+    if (!nsc(list, func)) {
+      return null;
+    }
+
+    let buffer : T[] = (Array.isArray(list)) ? list : Array.from(list);
+    let ret : Map<K, V> = new Map();
+
+    buffer.forEach((item) => {
+      if (nsc(item) && (!preFilter || preFilter(item))) {
+        let r : E = func(item);
+
+        if (nsc(r) && (!postFilter || postFilter(r))) {
+          ret.set(r.key, r.value);
+        }
+      }
+    });
+
+    return ret;
+  }
+
+  public static isIterable(obj : any) {
+    return nsc(obj) && typeof obj[Symbol.iterator] === 'function';
+  }
+}
+
+
+/**
+ * xcs
+ */
+ const { filter, forEach, toSet, toArray, toMap, isIterable} = Stream;
