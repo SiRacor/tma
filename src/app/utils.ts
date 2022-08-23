@@ -1,5 +1,4 @@
 import { PrefixNot } from "@angular/compiler";
-import { __spreadArrays } from "tslib";
 
 /**
  *
@@ -54,25 +53,27 @@ interface Class<T> {
 
 const { eq, neq } = Equality;
 
-export const NullSafe = {
+export class NullSafe {
 
-  nsc<T, U>(a : T, ...b : U[]) : boolean {
+  public static nsc<T, U>(a : T, ...b : U[]) : boolean {
     return a != undefined && a !== undefined
       && NullSafe.iteratePredicate(b, (v : U) => nsc(v));
-  },
+  }
 
-  nsce<T, U>(a : T, ...b : U[]) : boolean {
+  public static nsce<T, U>(a : T, ...b : U[]) : boolean {
     return nsc(a) && !emp(a)
       && NullSafe.iteratePredicate(b, (v : U) => nsce(v));
-  },
+  }
 
-  emp<T, U>(a : T | any, ...b : U[]) : boolean {
+  public static emp<T, U>(a : T | any, ...b : U[]) : boolean {
 
     let ret = !nsc(a, b);
 
     if (!ret) {
       if (typeof a === 'string' || a instanceof String) {
-        ret = a.trim.length === 0;
+        ret = a.trim().length === 0;
+      } else if (typeof a === 'boolean' || a instanceof Boolean) {
+        ret = false;
       } else if (Array.isArray(a)) {
         ret = a.length === 0;
       } else if (typeof a.size === 'function') {
@@ -84,29 +85,38 @@ export const NullSafe = {
       }
     }
 
-    if (!ret) {
-      ret = NullSafe.iteratePredicate(b, (v : U) => emp(v));
+    if (!ret && b != undefined) {
+      ret = NullSafe.iteratePredicate(b, (v : U) => emp(v) != true) != true;
     }
 
     return ret;
-  },
+  }
 
-  nvl<T, U extends T>(a : T | any, ...b : U[]) : T {
+  public static nvl<T, U extends T>(a : T | any, ...b : U[]) : T {
     	if (nsc(a)) return a;
       return NullSafe.iterateFunction(b, (v) => nvl(v));
-  },
+  }
 
-  nvle<T, U extends T>(a : T | any, ...b : U[]) : T {
+  public static nvle<T, U extends T>(a : T | any, ...b : U[]) : T {
     	if (nsce(a)) return a;
       return NullSafe.iterateFunction(b, (v) => nvle(v));
-  },
+  }
 
-  nvls<T, U extends () => T>(a : U | any, ...b : U[]) : T {
-    	if (nsce(a())) return a;
+  public static nvls<T>(a : (() => T) | T, ...b : T[] | (() => T)[]) : T {
+
+      a = NullSafe.rsl(a);
+    	if (nsc(a)) return a;
+
       return NullSafe.iterateFunction(b, (v) => nvls(v));
-  },
+  }
 
-  iteratePredicate(array : any[], func : (a : any) => boolean) : boolean {
+  public static rsl<T>(a : (() => T)) : T;
+  public static rsl<T>(a : (() => T) | T) : T
+  public static rsl<T>(a : (() => T) | T | any) : T {
+    return typeof a == 'function' ? a() : a;
+  }
+
+  public static iteratePredicate(array : any[], func : (a : any) => boolean) : boolean {
 
     let ret = true;
 
@@ -119,15 +129,9 @@ export const NullSafe = {
     }
 
     return ret;
-  },
+  }
 
-  /**
-   *
-   * @param array
-   * @param func
-   * @returns
-   */
-  iterateFunction<T>(array : any[], func : (a : any) => T) : T | any {
+  public static iterateFunction<T>(array : any[], func : (a : any) => T) : T | any {
 
     for(var i = 0; nsc(array) && i < array.length; i++) {
 
@@ -153,14 +157,15 @@ type DescribableFunction = {
 
 export class Stream {
 
-  public static filter<T>(list: T[] | Iterable<T>, filter : (arg: T) => boolean): T[] | null {
+  public static filter<T>(list: T[], filter : (arg: T) => boolean): T[];
+  public static filter<T>(list: Iterable<T>, filter : (arg: T) => boolean): Set<T>;
+  public static filter<T>(list: T[] | Iterable<T>, filter : (arg: T) => boolean): T[] | Set<T> | null {
 
     if (!nsc(list, filter)) {
       return null;
     }
 
-    let ret : T[] = new Array();
-
+    let ret : T[]  = new Array();
     let buffer : T[] = (Array.isArray(list)) ? list : Array.from(list);
 
     buffer?.forEach((item) => {
@@ -169,7 +174,7 @@ export class Stream {
       }
     })
 
-    return ret;
+    return Array.isArray(list) ? ret : new Set(ret);
   }
 
   public static forEach<T>(list: T[] | Iterable<T>, consumer : (arg: T) => void) : void;
@@ -189,21 +194,25 @@ export class Stream {
     });
   }
 
-  public static toSet<T, R>(list: T[] | Iterable<T>, func : (arg: T) => R) : Set<R> | null;
-  public static toSet<T, R>(list: T[] | Iterable<T>, func : (arg: T) => R, preFilter : (arg: T) => boolean) : Set<R> | null;
-  public static toSet<T, R>(list: T[] | Iterable<T>, func : (arg: T) => R, preFilter? : (arg: T) => boolean, postFilter? : (arg: R) => boolean) : Set<R>;
-  public static toSet<T, R>(list: T[] | Iterable<T>, func : (arg: T) => R, preFilter? : (arg: T) => boolean, postFilter? : (arg: R) => boolean) : Set<R> | null {
+  public static toSet<T, R>(list: T[] | Iterable<T>, func : (arg: T) => R) : Set<R>;
+  public static toSet<T, R>(list: T[] | Iterable<T>, preFilter : (arg: T) => boolean, func : (arg: T) => R) : Set<R>;
+  public static toSet<T, R>(list: T[] | Iterable<T>, a : ((arg: T) => boolean) | ((arg: T) => R), b? : (arg: T) => R) : Set<R> | null {
 
-    let buffer : R[] | null = Stream.toArray(list, func, preFilter);
+    let preFilter : ((arg: T) => boolean) | any = nsc(b) ? a : null;
+    let func : ((arg: T) => R) | any = nsc(b) ? b : a;
+
+    let buffer : R[] | null = Stream.toArray(list, preFilter, func);
     return buffer ? new Set(buffer) : null;
   }
 
   public static toArray<T, R>(list: T[] | Iterable<T>, func : (arg: T) => R) : R[] | null;
-  public static toArray<T, R>(list: T[] | Iterable<T>, func : (arg: T) => R, preFilter : (arg: T) => boolean) : R[] | null;
-  public static toArray<T, R>(list: T[] | Iterable<T>, func? : (arg: T) => R, preFilter? : (arg: T) => boolean, postFilter? : (arg: R) => boolean) : R[] | null;
-  public static toArray<T, R>(list: T[] | Iterable<T>, func? : (arg: T) => R, preFilter? : (arg: T) => boolean, postFilter? : (arg: R) => boolean) : R[] | null {
+  public static toArray<T, R>(list: T[] | Iterable<T>, preFilter : (arg: T) => boolean, func : (arg: T) => R) : R[] | null;
+  public static toArray<T, R>(list: T[] | Iterable<T>, a : ((arg: T) => boolean) | ((arg: T) => R), b? : (arg: T) => R) : R[] | null {
 
-    if (!nsc(list, func) || !func) {
+    let preFilter : ((arg: T) => boolean) | any = nsc(b) ? a : null;
+    let func : ((arg: T) => R) | any = nsc(b) ? b : a;
+
+    if (!nsc(list, func)) {
       return null;
     }
 
@@ -215,7 +224,7 @@ export class Stream {
 
         let r : R = func(item);
 
-        if (nsc(r) && (!postFilter || postFilter(r))) {
+        if (nsc(r)) {
           ret.push(r);
         }
       }
@@ -224,10 +233,14 @@ export class Stream {
     return ret;
   }
 
-  public static toMap<T, K, V, E extends { key : K, value : V }>(list: T[] | Iterable<T>, func : (arg: T) => E): Map<K, V> | null;
-  public static toMap<T, K, V, E extends { key : K, value : V }>(list: T[] | Iterable<T>, func : (arg: T) => E, preFilter? : (arg: T) => boolean): Map<K, V> | null;
-  public static toMap<T, K, V, E extends { key : K, value : V }>(list: T[] | Iterable<T>, func : (arg: T) => E, preFilter? : (arg: T) => boolean, postFilter? : (arg: E) => boolean): Map<K, V> | null;
-  public static toMap<T, K, V, E extends { key : K, value : V }>(list: T[] | Iterable<T>, func : (arg: T) => E, preFilter? : (arg: T) => boolean, postFilter? : (arg: E) => boolean): Map<K, V> | null {
+  public static toMap<T, K, V, E extends { key : K, value : V }>(list: T[] | Iterable<T>, func : (arg: T) => E): Map<K, V>;
+  public static toMap<T, K, V, E extends { key : K, value : V }>(list: T[] | Iterable<T>, preFilter : (arg: T) => boolean, func : (arg: T) => E): Map<K, V>;
+  public static toMap<T, K, V, E extends { key : K, value : V }>(list: T[] | Iterable<T>, preFilter : ((arg: T) => boolean) | null, func : (arg: T) => E, conflict : (stored: E, candidate: E) => E): Map<K, V>;
+  public static toMap<T, K, V, E extends { key : K, value : V }>(list: T[] | Iterable<T>, a : ((arg: T) => E) | ((arg: T) => boolean), b? : (arg: T) => boolean, c? : (stored: E, candidate: E) => E): Map<K, V> | null {
+
+    let preFilter : ((arg: T) => boolean) | any = nsc(b) ? a : null;
+    let func : ((arg: T) => E) | any = nsc(b) ? b : a;
+    let conflict : (stored: E, candidate: E | any) => E = nvl(c, (stored: E, candidate: E) => nvl(candidate, stored));
 
     if (!nsc(list, func)) {
       return null;
@@ -238,15 +251,23 @@ export class Stream {
 
     buffer.forEach((item) => {
       if (nsc(item) && (!preFilter || preFilter(item))) {
+
         let r : E = func(item);
 
-        if (nsc(r) && (!postFilter || postFilter(r))) {
-          ret.set(r.key, r.value);
+        if (nsc(r) && ret.has(r.key) && ret.get(r.key) != r.value) {
+          r = conflict(r, ret.get(r.key));
         }
+
+        if (nsc(r)) ret.set(r.key, r.value);
       }
     });
 
     return ret;
+  }
+
+  public static toEntry<K, V>(key : K, value : V) : { key : K, value : V } {
+    let entry : { key : K, value : V } = { key : key, value : value};
+    return entry;
   }
 
   public static isIterable(obj : any) {
@@ -258,4 +279,49 @@ export class Stream {
 /**
  * xcs
  */
- const { filter, forEach, toSet, toArray, toMap, isIterable} = Stream;
+ const { filter, forEach, toSet, toArray, toMap, isIterable, toEntry} = Stream;
+
+
+ export class Assert {
+
+  public static getMatcher<T>(actual: T, msg? : String | string): jasmine.Matchers<T> {
+    let msi : string | any = msg instanceof String ? msg.valueOf() : msg;
+    return (nsc(msi)) ? expect(actual).withContext(msi) : expect(actual);
+  }
+
+  public static getBool(test : boolean | Boolean | (() => boolean | Boolean)): boolean {
+    return test instanceof Boolean
+    ? test.valueOf()
+    : typeof test == 'function'
+    ? getBool(test())
+    : test != undefined && test
+  }
+
+
+  public static assertTrue(test : boolean | Boolean | (() => boolean | Boolean)) : void;
+  public static assertTrue(test : boolean | Boolean | (() => boolean | Boolean), msg? : String | string) : void;
+  public static assertTrue(test : boolean | Boolean | (() => boolean | Boolean), msg? : String | string) : void {
+    Assert.getMatcher(Assert.getBool(test), msg).toBeTrue();
+  }
+
+  public static assertFalse(test : boolean | Boolean | (() => boolean | Boolean)) : void;
+  public static assertFalse(test : boolean | Boolean | (() => boolean | Boolean), msg? : String | string) : void;
+  public static assertFalse(test : boolean | Boolean | (() => boolean | Boolean), msg? : String | string) : void{
+    Assert.getMatcher(Assert.getBool(test), msg).toBeFalse();
+  }
+
+  public static assertEq<T>(a : T, b : T) : void;
+  public static assertEq<T>(a : T, b : T, msg? : String | string) : void;
+  public static assertEq<T>(a : T, b : T, msg? : String | string) : void{
+    Assert.getMatcher(a, msg).toEqual(b);
+  }
+
+  public static assertNeq<T>(a : T, b : T) : void;
+  public static assertNeq<T>(a : T, b : T, msg? : String | string) : void;
+  public static assertNeq<T>(a : T, b : T, msg? : String | string) : void{
+    Assert.getMatcher(a, msg).not.toEqual(b);
+  }
+
+ }
+
+ const { getMatcher, getBool, assertTrue, assertFalse} = Assert;

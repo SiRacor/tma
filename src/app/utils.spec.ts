@@ -1,7 +1,10 @@
-import { Equality, NullSafe } from './utils';
+import { Equality, NullSafe, Assert, Stream } from './utils';
 
 const { eq, neq } = Equality;
-const { nsc, nsce, emp, nvl, nvle } = NullSafe;
+const { nsc, nsce, emp, nvl, nvle, nvls } = NullSafe;
+const { getMatcher, getBool, assertTrue, assertFalse, assertEq, assertNeq} = Assert;
+const { filter, forEach, toSet, toArray, toMap, toEntry, isIterable} = Stream;
+
 
 describe('Equality', () => {
 
@@ -11,15 +14,15 @@ describe('Equality', () => {
     let b2 = null;
     let b3 = false;
 
-    expect(eq(b1, b2, b3)).toBe(false);
-    expect(eq(b1, !b3, b2)).toBe(false);
-    expect(eq(b1, !b3)).toBe(true);
+    assertFalse(eq(b1, b2, b3));
+    assertFalse(eq(b1, !b3, b2));
+    assertTrue(eq(b1, !b3));
 
     let bo1 = new Boolean(true);
     let bo2 = new Boolean(false);
 
-    expect(eq(bo1, bo2)).toBe(false);
-    expect(eq(bo1, new Boolean(!(bo2.valueOf())))).toBe(true);
+    assertFalse(eq(bo1, bo2));
+    assertTrue(eq(bo1, new Boolean(!(bo2.valueOf()))));
   });
 
   it('eq with null, undefined', () => {
@@ -27,7 +30,7 @@ describe('Equality', () => {
     let b1 = undefined;
     let b2 = null;
 
-    expect(eq(b1, b2)).toBe(true);
+    assertTrue(eq(b1, b2));
   });
 
   it('neq', () => {
@@ -36,8 +39,8 @@ describe('Equality', () => {
     let b2 = null;
     let b3 = null;
 
-    expect(neq(b1, b2, b3)).toBe(false);
-    expect(neq(b1, b2, false)).toBe(true);
+    assertFalse(neq(b1, b2, b3));
+    assertTrue(neq(b1, b2, false));
   });
 
   it('arrays', () => {
@@ -48,14 +51,23 @@ describe('Equality', () => {
     let oa : Object = a;
     let oc : Object = 1;
 
-    expect(eq(a, b)).toBe(true);
-    expect(eq(oc, oa)).toBe(false);
+    assertTrue(eq(a, b));
+    assertFalse(eq(oc, oa));
   });
 })
 
 describe('NullSafe', () => {
 
-  it('arrays', () => {
+  it('nsc with boolean', () => {
+
+    let a = new Boolean(true);
+    let b = false;
+
+    assertTrue(nsc(a, b));
+    assertFalse(nsc(a, b, null));
+  });
+
+  it('nsc with arrays', () => {
 
     let a = new Array([1, 1]);
     let b = new Array([1, 1]);
@@ -63,7 +75,136 @@ describe('NullSafe', () => {
     let oa : Object = a;
     let oc : Object = 1;
 
-    expect(nsc(a, b)).toBe(true);
-    expect(nsc(oc, oa)).toBe(true);
+    assertTrue(nsc(a, b));
+    assertTrue(nsc(oc, oa));
+  });
+
+  it('nsce with boolean', () => {
+
+    let a = new Boolean(true);
+    let b = false;
+
+    assertTrue(nsce(a, b));
+    assertFalse(nsce(a, b, null));
+  });
+
+  it('nsce with string', () => {
+
+    let a = new String("");
+    let b = "d";
+
+    assertFalse(nsce(a, b));
+    assertFalse(nsce(a, b, null));
+
+    a = a.concat("f");
+
+    assertTrue(nsce(a, b));
+  });
+
+  it('nsce with array', () => {
+
+    let a = new Array(0);
+    let b : String[] = [];
+
+    assertFalse(nsce(a));
+    assertFalse(nsce(a, b));
+
+    a.push(1);
+    b.push("1");
+
+    assertTrue(nsce(a));
+    assertTrue(nsce(b));
+  });
+
+  it('nvl with String', () => {
+
+    let a = null;
+    let b = "f";
+
+    assertTrue(nvl(a, b) == b);
+    assertTrue(nvl(b, a) == b);
+
+    a = "d";
+
+    assertTrue(nvl(a, b) == a);
+  });
+
+  it('nvle with String', () => {
+
+    let a = "";
+    let b = "f";
+
+    assertEq(nvle(a, b), b);
+    assertEq(nvle(b, a), b);
+
+    a = "d";
+
+    assertEq(nvl(a, b),a);
+  });
+
+  it('nvls with String', () => {
+
+    let a = "f";
+    let b = () => "f";
+
+    assertEq(nvls(a, b), b());
+  });
+})
+
+describe('Assert', () => {
+
+  it('getBool with boolean', () => {
+
+    let a = true;
+    let b = new Boolean(false);
+    let c = () => true;
+    let d = () => new Boolean(false);
+
+    assertTrue(getBool(a));
+    assertFalse(getBool(b));
+    assertTrue(getBool(c));
+    assertFalse(getBool(d));
+  });
+});
+
+describe('Stream', () => {
+
+  fit('filter', () => {
+
+    let a : string[] = filter(["a", "b", "c"], (s) => s > "a");
+
+    assertEq(a.length, 2);
+
+    let b : Set<string> = filter(new Set(["a", "b", "c"]), (s) => s > "a");
+
+    assertEq(b.size, 2);
+  });
+
+  it('toSet', () => {
+
+    let a : Set<string> = toSet(["a", "b", "c"], (s) => s);
+    let b : Set<string> = new Set(["a", "b", "c"]);
+
+    assertEq(a.size, b.size);
+    let c : any = null;
+
+    a = toSet(["a", "b", "c"], (s) => neq(s, "b"), (s) => s);
+    assertNeq(a.size, b.size);
+  });
+
+  it('toMap', () => {
+
+    let a : Map<string, number> = toMap(["a1", "b22", "c333", "a1"],
+      (s) => toEntry(s, s.length)
+    );
+
+    assertEq(a.size, 3);
+
+    let b : Map<number, string> = toMap(["a1", "b22", "c333", "b1"], null,
+      (s) => toEntry(s.length, s),
+      (stored, candidate) => toEntry(stored.key + 10, candidate.value)
+    );
+
+    assertEq(b.size, 4);
   });
 });
