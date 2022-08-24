@@ -25,6 +25,9 @@
             "styles": [
               "src/styles.css"
             ],
+            "allowedCommonJsDependencies": [
+                "papaparse"
+            ],
             "scripts": []
           },
           "configurations": {

@@ -13,6 +13,7 @@ import { HttpClientModule } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ProductService } from './balance/productservice';
+import { SheetDAO } from './balance/sheetdao';
 
 import {TableModule} from 'primeng/table';
 import {ToastModule} from 'primeng/toast';
@@ -56,7 +57,7 @@ import { AddRowDirective } from './balance/add-row.directive';
     TabMenuModule,
     RouterModule
   ],
-  providers: [ProductService],
+  providers: [ProductService, SheetDAO],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

@@ -92,13 +92,13 @@ export class NullSafe {
     return ret;
   }
 
-  public static nvl<T, U extends T>(a : T | any, ...b : U[]) : T {
-    	if (nsc(a)) return a;
+  public static nvl<T>(a? : T, ...b : T[] | any) : T {
+    	if (nsc(a) && a != undefined) return a;
       return NullSafe.iterateFunction(b, (v) => nvl(v));
   }
 
-  public static nvle<T, U extends T>(a : T | any, ...b : U[]) : T {
-    	if (nsce(a)) return a;
+  public static nvle<T>(a? : T, ...b : T[]) : T {
+    	if (nsce(a) && a != undefined) return a;
       return NullSafe.iterateFunction(b, (v) => nvle(v));
   }
 
@@ -115,6 +115,26 @@ export class NullSafe {
   public static rsl<T>(a : (() => T) | T | any) : T {
     return typeof a == 'function' ? a() : a;
   }
+
+  public static wth<T>(t : T | null, func : (t : T) => any) : boolean;
+  public static wth<T, R>(t : T | null | undefined, alt : R, func : (t : T) => any) : R;
+  public static wth<T, R>(t : T | null | undefined, a : (t : T) => R | R, b? : (t : T ) => R) : boolean | R {
+
+    let alt : R | any = nsc(b) ? a : null;
+    let func : ((t : T) => R) | any = nsc(b) ? b : a;
+
+    let ret : boolean = false;
+
+    if (alt != undefined) {
+      ret = (t != null) ? func(t) : alt;
+    } else if (t != null) {
+      func(t);
+      ret = true;
+    }
+
+    return ret;
+  }
+
 
   public static iteratePredicate(array : any[], func : (a : any) => boolean) : boolean {
 
@@ -177,9 +197,39 @@ export class Stream {
     return Array.isArray(list) ? ret : new Set(ret);
   }
 
+  public static anyMatch<T>(list: T[], filter : (arg: T) => boolean): boolean;
+  public static anyMatch<T>(list: Iterable<T>, filter : (arg: T) => boolean): boolean;
+  public static anyMatch<T>(list: T[] | Iterable<T>, filter : (arg: T) => boolean): boolean {
+    return Stream.count(list, filter) > 0;
+  }
+
+  public static findFirst<T>(list: T[], filter : (arg: T) => boolean): T | null;
+  public static findFirst<T>(list: Iterable<T>, filter : (arg: T) => boolean): T | null;
+  public static findFirst<T>(list: T[] | Iterable<T>, filter : (arg: T) => boolean): T | null {
+
+    let filtered: T[] =  new Array(0);
+    if (filter != undefined) {
+      filtered = Array.from(Stream.filter(list, filter));
+    }
+
+    return filtered.length > 0 ? filtered[0] : null;
+  }
+
+  public static count<T>(list: T[] | Iterable<T>, filter? : (arg: T) => boolean): number {
+
+    if (filter != undefined) {
+      list = Stream.filter(list, filter);
+    }
+
+    return Array.isArray(list) ? list.length : isIterable(list) ? new Set(list).size : 0;
+  }
+
   public static forEach<T>(list: T[] | Iterable<T>, consumer : (arg: T) => void) : void;
-  public static forEach<T>(list: T[] | Iterable<T>, consumer : (arg: T) => void, preFilter? : (arg: T) => boolean) : void;
-  public static forEach<T>(list: T[] | Iterable<T>, consumer : (arg: T) => void, preFilter? : (arg: T) => boolean) : void {
+  public static forEach<T>(list: T[] | Iterable<T>, preFilter : (arg: T) => boolean, consumer : (arg: T) => void) : void;
+  public static forEach<T>(list: T[] | Iterable<T>, a : ((arg: T) => boolean) | ((arg: T) => void), b? : (arg: T) => void) : void {
+
+    let preFilter : ((arg: T) => boolean) | any = nsc(b) ? a : null;
+    let consumer : ((arg: T) => void) | any = nsc(b) ? b : a;
 
     if (!nsc(list, consumer)) {
       return;
@@ -188,7 +238,7 @@ export class Stream {
     let buffer : T[] = (Array.isArray(list)) ? list : Array.from(list);
 
     buffer.forEach((item) => {
-      if (nsc(preFilter, item) && preFilter?.(item)) {
+      if (nsc(item) && (!preFilter || preFilter(item))) {
         consumer(item);
       }
     });
@@ -205,8 +255,8 @@ export class Stream {
     return buffer ? new Set(buffer) : null;
   }
 
-  public static toArray<T, R>(list: T[] | Iterable<T>, func : (arg: T) => R) : R[] | null;
-  public static toArray<T, R>(list: T[] | Iterable<T>, preFilter : (arg: T) => boolean, func : (arg: T) => R) : R[] | null;
+  public static toArray<T, R>(list: T[] | Iterable<T>, func : (arg: T) => R) : R[];
+  public static toArray<T, R>(list: T[] | Iterable<T>, preFilter : (arg: T) => boolean, func : (arg: T) => R) : R[];
   public static toArray<T, R>(list: T[] | Iterable<T>, a : ((arg: T) => boolean) | ((arg: T) => R), b? : (arg: T) => R) : R[] | null {
 
     let preFilter : ((arg: T) => boolean) | any = nsc(b) ? a : null;
@@ -240,7 +290,7 @@ export class Stream {
 
     let preFilter : ((arg: T) => boolean) | any = nsc(b) ? a : null;
     let func : ((arg: T) => E) | any = nsc(b) ? b : a;
-    let conflict : (stored: E, candidate: E | any) => E = nvl(c, (stored: E, candidate: E) => nvl(candidate, stored));
+    let conflict: (stored: E, candidate: E | any) => E = nvl(c, (stored: E, candidate: E) => nvl(candidate, stored));
 
     if (!nsc(list, func)) {
       return null;

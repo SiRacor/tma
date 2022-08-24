@@ -149,11 +149,28 @@ describe('NullSafe', () => {
 
     assertEq(nvls(a, b), b());
   });
+
+  it('nvls with call-check', () => {
+
+    let i : number = 0;
+    let a = () : string => {
+      i++;
+      return "f";
+    };
+
+    let b = () : string => {
+      i++;
+      return "g";
+    };
+
+    assertEq(nvls(a, b), "f");
+    assertEq(i, 1);
+  });
 })
 
 describe('Assert', () => {
 
-  it('getBool with boolean', () => {
+  it('getBool', () => {
 
     let a = true;
     let b = new Boolean(false);
@@ -165,11 +182,18 @@ describe('Assert', () => {
     assertTrue(getBool(c));
     assertFalse(getBool(d));
   });
+
+  it('getMatcher', () => {
+
+    let a = true;
+
+    assertTrue(eq(getMatcher(a), expect(a)));
+  });
 });
 
 describe('Stream', () => {
 
-  fit('filter', () => {
+  it('filter', () => {
 
     let a : string[] = filter(["a", "b", "c"], (s) => s > "a");
 
@@ -178,6 +202,26 @@ describe('Stream', () => {
     let b : Set<string> = filter(new Set(["a", "b", "c"]), (s) => s > "a");
 
     assertEq(b.size, 2);
+  });
+
+  it('forEach', () => {
+
+    let i : number = 0;
+    forEach(["a", "b", "c"], (s) => i++);
+
+    assertEq(i, 3);
+
+    i = 0;
+    forEach(["a", "b", "c"], (s) => s > "a", (s) => i++);
+
+    assertEq(i, 2);
+  });
+
+  it('toArray', () => {
+
+    let a : string[] = toArray(["a", "b", "c"], (s) => s > "a", (s) => s);
+
+    assertEq(a.length, 2);
   });
 
   it('toSet', () => {
@@ -206,5 +250,21 @@ describe('Stream', () => {
     );
 
     assertEq(b.size, 4);
+  });
+
+  it('isIterable', () => {
+
+    assertTrue(isIterable(["a", "b", "c"]));
+    assertTrue(isIterable(new Set(["a", "b", "c"])));
+    assertTrue(isIterable(new Map([["a", "b"]])));
+    assertFalse(isIterable({ a: 1 }));
+
+  });
+
+  it('toEntry', () => {
+
+    assertTrue(eq(toEntry("a", "b"), { key: "a", value: "b"}));
+    assertFalse(eq(toEntry("a", "b"), { key: "a", value: "c"}));
+
   });
 });

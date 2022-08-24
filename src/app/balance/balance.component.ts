@@ -3,6 +3,7 @@ import { SelectItem } from 'primeng/api';;
 import { ProductService } from './productservice';
 import { Product } from './product';
 import { MessageService } from 'primeng/api';
+import { Person, Row, Sheet, SheetDTO } from './sheet';
 
 @Component({
   selector: 'app-balance',
@@ -16,6 +17,9 @@ export class BalanceComponent implements OnInit {
 
   products2: Product[] = [];
 
+  sheet: Sheet = new Sheet();
+  sheetDto!: SheetDTO;
+
   statuses: SelectItem[] = [];
   clonedProducts: { [s: string]: Product; } = {};
 
@@ -26,7 +30,16 @@ export class BalanceComponent implements OnInit {
       this.productService.getProductsSmall().then(data => this.products2 = data);
 
       this.statuses = [{label: 'In Stock', value: 'INSTOCK'},{label: 'Low Stock', value: 'LOWSTOCK'},{label: 'Out of Stock', value: 'OUTOFSTOCK'}]
-  }
+
+      let sira : Person = new Person("Sira", "W") ;
+      let sky : Person = new Person("Sky", "S") ;
+      let julia : Person = new Person("Julia", "J") ;
+
+      this.sheet.rows.add(new Row(sira, [ sky, julia ], "Spar", "Essen", -10.40, this.sheet));
+      this.sheet.rows.add(new Row(sira, [ sira, sky, julia ], "Spar", "Essen", -5, this.sheet));
+
+      this.sheetDto = this.sheet.calc();
+    }
 
   onRowEditInit(product: Product) {
     if (product.id != undefined) {

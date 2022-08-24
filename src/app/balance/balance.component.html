@@ -15,7 +15,7 @@ https://stackblitz.com/edit/primeng-table-addnewrow?file=src%2Fapp%2Fadd-row.dir
                   <th style="width:8rem"></th>
               </tr>
           </ng-template>
-          <ng-template pTemplate="body" let-product let-editing="editing" let-ri="rowIndex">
+          <ng-template pTemplate="body" let-product let-c let-editing="editing" let-ri="rowIndex">
               <tr [pEditableRow]="product">
                   <td pEditableColumn>
                       <p-cellEditor>
