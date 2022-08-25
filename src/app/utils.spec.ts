@@ -1,5 +1,5 @@
-import { Equality, NullSafe, Assert, Stream } from './utils';
-
+import { Equality, NullSafe, Stream } from './utils';
+import { Assert } from './assert';
 const { eq, neq } = Equality;
 const { nsc, nsce, emp, nvl, nvle, nvls } = NullSafe;
 const { getMatcher, getBool, assertTrue, assertFalse, assertEq, assertNeq} = Assert;

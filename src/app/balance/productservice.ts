@@ -6,7 +6,7 @@ import { Product } from './product';
 @Injectable()
 export class ProductService {
     getNextId() {
-      this.getProducts().then((products: Product[]) => {
+      this.getProductsSmall().then((products: Product[]) => {
         let ids: number[] = [];
         products.forEach((product) => {
           if (product.id != undefined) ids.push(Number.parseInt(product.id));
@@ -54,13 +54,6 @@ export class ProductService {
 
     getProductsSmall() {
         return this.http.get<any>('assets/products-small.json')
-        .toPromise()
-        .then(res => <Product[]>res.data)
-        .then(data => { return data; });
-    }
-
-    getProducts() {
-        return this.http.get<any>('assets/products.json')
         .toPromise()
         .then(res => <Product[]>res.data)
         .then(data => { return data; });

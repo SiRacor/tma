@@ -13,32 +13,33 @@ export class Sheet {
 
   public calc() : SheetDTO {
 
-    let res : Set<RowDTO> = new Set();
-    let cols : Set<ColDTO> = new Set();
+    let res : RowDTO[] = new Array();
+    let cols : ColDTO[] = new Array();
     let total : Map<Person, number> = new Map();
 
-    cols.add({ label : "Bezeichnung", accessor: (row: RowDTO) => row.label });
-    cols.add({ label : "Kategorie", accessor: (row: RowDTO) => row.category });
-    cols.add({ label : "Betrag", accessor: (row: RowDTO) => row.amount });
+    cols.push({ label : "Bezeichnung", accessor: (row: RowDTO) => row.label });
+    cols.push({ label : "Kategorie", accessor: (row: RowDTO) => row.category });
+    cols.push({ label : "Betrag", accessor: (row: RowDTO) => row.amount });
 
     forEach(this.persons, (person) => {
 
-      cols.add({
+      cols.push({
         label : "",
         accessor: (row: RowDTO) =>
            wth(row.results.get(person), "", (rs) => rs.part)
       });
 
-      cols.add({
+      cols.push({
         label : person.name,
         accessor: (row: RowDTO) => wth(row.results.get(person), 0, (rs) => rs.due)
       });
 
     });
 
+    let i = 0;
     forEach(this.rows, (row) => {
 
-      res.add({ paidBy : row.paidBy, label : row.label, category : row.category,
+      res.push({ id: i, paidBy : row.paidBy, label : row.label, category : row.category,
         amount : row.amount, results : toMap(row.entries, (result) => toEntry(result.target, result))
       });
 
@@ -195,7 +196,7 @@ export interface Result {
 }
 
 export interface RowDTO {
-  paidBy : Person, label : string, category : string, amount: number, results: Map<Person, Result>
+  id:number; paidBy : Person, label : string, category : string, amount: number, results: Map<Person, Result>
 }
 
 export interface ColDTO {
@@ -203,7 +204,7 @@ export interface ColDTO {
 }
 
 export interface SheetDTO {
-  rows: Set<RowDTO>;
-  cols: Set<ColDTO>;
+  rows: RowDTO[];
+  cols: ColDTO[];
   total : Map<Person, number>;
 }
