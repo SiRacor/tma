@@ -26,8 +26,8 @@ describe('SheetdaoService', () => {
 
     let sheet : Sheet = new Sheet(new Set([julia, sky, sira]));
 
-    sheet.rows.add(new Row(sira, [ sky, julia ], "Spar", "Essen", -10.40, sheet));
-    sheet.rows.add(new Row(sira, [ sira, sky, julia ], "Spar", "Essen", -5, sheet));
+    sheet.rows.add(new Row(1, new Date(), sira, [ sky, julia ], "Spar", "Essen", -10.40, sheet));
+    sheet.rows.add(new Row(2, new Date(), sira, [ sira, sky, julia ], "Spar", "Essen", -5, sheet));
 
     let dto = sheet.calc();
 

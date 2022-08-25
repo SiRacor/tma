@@ -17,35 +17,13 @@ export class Sheet {
     let cols : ColDTO[] = new Array();
     let total : Map<Person, number> = new Map();
 
-    cols.push({ label : "Bezeichnung", accessor: (row: RowDTO) => row.label });
-    cols.push({ label : "Kategorie", accessor: (row: RowDTO) => row.category });
-    cols.push({ label : "Betrag", accessor: (row: RowDTO) => row.amount });
-
-    forEach(this.persons, (person) => {
-
-      cols.push({
-        label : "",
-        accessor: (row: RowDTO) =>
-           wth(row.results.get(person), "", (rs) => rs.part)
-      });
-
-      cols.push({
-        label : person.name,
-        accessor: (row: RowDTO) => wth(row.results.get(person), 0, (rs) => rs.due)
-      });
-
-    });
-
-    let i = 0;
     forEach(this.rows, (row) => {
 
-      res.push({ id: i, paidBy : row.paidBy, label : row.label, category : row.category,
-        amount : row.amount, results : toMap(row.entries, (result) => toEntry(result.target, result))
+      forEach(row.entries, (entry) => {
+        total.set(entry.target, nvl(total.get(entry.target), 0) + entry.due)
       });
 
-      forEach(row.entries, (entry) =>
-        total.set(entry.target, nvl(total.get(entry.target), 0) + entry.due)
-      );
+      res.push(row.toRowDTO());
     });
 
     let sum : number = 0;
@@ -71,7 +49,50 @@ export class Sheet {
       total.set(max.person, max.amount - (sum));
     }
 
-    return { rows: res, cols: cols, total : total };
+    let emptSort: (row1:RowDTO, row2:RowDTO) => number =
+     (row1:RowDTO, row2:RowDTO) => 0;
+
+    let stSort : (gtr: (row: RowDTO) => string) => (row1:RowDTO, row2:RowDTO) => number =
+      (gtr) => (row1:RowDTO, row2:RowDTO) => gtr(row1).localeCompare(gtr(row2));
+
+    let nbSort : (gtr: (row: RowDTO) => number) => (row1:RowDTO, row2:RowDTO) => number =
+      (gtr) => (row1:RowDTO, row2:RowDTO) => gtr(row1) < gtr(row2) ? -1 : gtr(row1) > gtr(row2) ? 1 : 0;
+
+	let i = 0;
+	let idGen: () => string = () => "" + i++;
+
+    cols.push({ id: idGen(), label : "Datum", accessor: (row: RowDTO) => row.date, footer: "", sorter: nbSort((row : RowDTO) => row.date.getMilliseconds()), date: true });
+    cols.push({ id: idGen(), label : "Von", accessor: (row: RowDTO) => row.paidBy.letter, footer: "", sorter: stSort((row : RowDTO) => nvl(row.paidBy.letter)) });
+    cols.push({ id: idGen(), label : "Für", accessor: (row: RowDTO) => row.paidFor, footer: "", sorter: stSort((row : RowDTO) => nvl(row.paidFor)) });
+    cols.push({ id: idGen(), label : "Bezeichnung", accessor: (row: RowDTO) => row.label, footer: "", sorter: stSort((row : RowDTO) => row.label)  });
+    cols.push({ id: idGen(), label : "Kategorie", accessor: (row: RowDTO) => row.category, footer: "Summe", sorter: stSort((row : RowDTO) => row.category)   });
+    cols.push({ id: idGen(), label : "Betrag", accessor: (row: RowDTO) => row.amount, footer: "", sorter: nbSort((row : RowDTO) => row.amount),  number: true });
+	
+	
+	
+    forEach(this.persons, (person) => {
+
+      cols.push({
+        id: idGen(),
+        label : "",
+        accessor: (row: RowDTO) =>
+           wth(row.results.get(person), "", (rs) => rs.part),
+        footer: "",
+        sorter: emptSort
+      });
+
+      cols.push({
+        id: idGen(),
+        label : person.name + " (" + person.letter + ")",
+        accessor: (row: RowDTO) => wth(row.results.get(person), 0, (rs) => rs.due),
+        footer: total.get(person),
+        sorter: nbSort((row : RowDTO) => wth(row.results.get(person), 0, (rs) => rs.due)),
+        number: true
+      });
+
+    });
+
+    return { persons: Array.from(total.keys()), rows: res, cols: cols, total : total };
   }
 }
 
@@ -88,7 +109,7 @@ export class Person {
     letter?: string
   ) {
     this.name = name;
-    this.letter = nvle(name.toUpperCase(), letter, 'Z')?.charAt(0);
+    this.letter = nvle(letter, name.toUpperCase(), 'Z')?.charAt(0);
   }
 }
 
@@ -137,12 +158,15 @@ export class Row {
   }
 
   public constructor(
+      public readonly id: number,
+      public date: Date,
       public readonly paidBy: Person,
       paidFor: Person[],
       public readonly label: string,
       public readonly category: string,
       amount: number, sheet: Sheet) {
 
+    this.id = id;
     this._amount = amount;
     this._sheet = sheet;
     this.paidBy = paidBy;
@@ -162,7 +186,7 @@ export class Row {
     this.addToSheet(this.paidBy);
 
     if (!self) {
-      this.entries.add({ target : this.paidBy, part: "1", ratio: 1,  due: this.amount });
+      this.entries.add({ target : this.paidBy, part: "-1", ratio: 1,  due: this.amount });
     }
 
     forEach(this.paidFor, (pf) => {
@@ -178,7 +202,7 @@ export class Row {
         a = -1
       }
 
-      this.entries.add({ target : pf, part: a + "/" + b, ratio: a / b,  due: this.amount * a / b});
+      this.entries.add({ target : pf, part: (a* -1) + "/" + b, ratio: a / b,  due: this.amount * a / b});
     })
   }
 
@@ -189,6 +213,22 @@ export class Row {
     }
   }
 
+  public toRowDTO() : RowDTO {
+    let row: Row = this;
+    let paidFor : string = "";
+
+    forEach(row.entries, (entry) => {
+      if (entry.ratio != 1) {
+        paidFor = paidFor + "" + entry.target.letter
+      }
+    });
+
+    return { id: row.id, date: row.date, paidBy : row.paidBy, paidFor: paidFor, label : row.label, category : row.category,
+      amount : row.amount, results : toMap(row.entries,
+         (result) => toEntry(result.target, { target: result.target, part: result.part, ratio: result.ratio, due: Math.round((result.due + Number.EPSILON) * 100) / 100 } ))
+    };
+  }
+
 }
 
 export interface Result {
@@ -196,14 +236,18 @@ export interface Result {
 }
 
 export interface RowDTO {
-  id:number; paidBy : Person, label : string, category : string, amount: number, results: Map<Person, Result>
+  id:number, date: Date, paidBy : Person, paidFor : string, label : string, category : string, amount: number, results: Map<Person, Result>
 }
 
 export interface ColDTO {
-  label: string, accessor: (row: RowDTO) => any
+  id: string,
+  label: string, accessor: (row: RowDTO) => any, footer: any,
+  sorter: (row1:RowDTO, row2:RowDTO) => number,
+  number?: boolean, date?: boolean
 }
 
 export interface SheetDTO {
+  persons: Person[];
   rows: RowDTO[];
   cols: ColDTO[];
   total : Map<Person, number>;

@@ -26,6 +26,7 @@ import {ButtonModule} from 'primeng/button';
 import {DropdownModule} from 'primeng/dropdown';
 import {ProgressBarModule} from 'primeng/progressbar';
 import {InputTextModule} from 'primeng/inputtext';
+import {CardModule} from 'primeng/card';
 
 import { AddRowDirective } from './balance/add-row.directive';
 
@@ -55,7 +56,8 @@ import { AddRowDirective } from './balance/add-row.directive';
     HttpClientModule,
     FormsModule,
     TabMenuModule,
-    RouterModule
+    RouterModule,
+    CardModule
   ],
   providers: [ProductService, SheetDAO],
   bootstrap: [AppComponent]

@@ -1,14 +1,22 @@
-import { Component, OnInit } from '@angular/core';
-import { SelectItem } from 'primeng/api';;
+import { Component, OnInit, ViewEncapsulation } from '@angular/core';
+import { SelectItem, SortEvent } from 'primeng/api';;
 import { ProductService } from './productservice';
 import { Product } from './product';
 import { MessageService } from 'primeng/api';
-import { Person, Row, Sheet, SheetDTO } from './sheet';
+import { Person, Row, Sheet, SheetDTO, ColDTO } from './sheet';
+import { Stream, NullSafe, Equality } from '../utils';
+import { NgSwitchCase } from '@angular/common';
+
+const { findFirst, forEach } = Stream;
+const { wth, nsc } = NullSafe;
+const { eq } = Equality;
+
 
 @Component({
   selector: 'app-balance',
   templateUrl: './balance.component.html',
   providers: [MessageService, ProductService],
+  styles: ['.right { text-align: right;}'],
   styleUrls: ['./balance.component.css']
 })
 export class BalanceComponent implements OnInit {
@@ -35,8 +43,9 @@ export class BalanceComponent implements OnInit {
       let sky : Person = new Person("Sky", "S") ;
       let julia : Person = new Person("Julia", "J") ;
 
-      this.sheet.rows.add(new Row(sira, [ sky, julia ], "Spar", "Essen", -10.40, this.sheet));
-      this.sheet.rows.add(new Row(sira, [ sira, sky, julia ], "Spar", "Essen", -5, this.sheet));
+      this.sheet.rows.add(new Row(1, new Date(), sira, [ sky, julia ], "Spar", "Essen", -10.40, this.sheet));
+      this.sheet.rows.add(new Row(2, new Date(), sira, [ sira, sky, julia ], "Spar", "Essen", -5, this.sheet));
+      this.sheet.rows.add(new Row(2, new Date(), sky, [ sky, julia ], "Spar", "Essen", -6, this.sheet));
 
       this.sheetDto = this.sheet.calc();
     }
@@ -68,6 +77,28 @@ onRowEditCancel(product: Product, index: number) {
 }
   newRow() {
     return { id: this.productService.getNextId() + "", code: 'asf', name: 'asf', inventoryStatus: 'INSTOCK', price: '0.3' };
+  }
+
+  customSort(event: SortEvent) {
+
+    let rows: Row[] = Array.from(this.sheet.rows);
+
+    rows.sort((data1, data2) => {
+      let result = 0;
+
+      if (event.data != null) {
+        wth(findFirst(this.sheetDto.cols, (c) => eq(c.id, event.field)), (col) => {
+          result = col.sorter(data1.toRowDTO(), data2.toRowDTO());
+        });
+      }
+
+      return result * wth(event, 1, (e) => e.order);
+    });
+
+    this.sheet.rows = new Set(rows);
+    this.sheetDto = this.sheet.calc();
+	
+    event.data = this.sheetDto.rows
   }
 }
 
