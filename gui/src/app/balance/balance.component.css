@@ -1,0 +1,11 @@
+
+::ng-deep .p-datatable-sm .p-datatable-tfoot > tr > td.rightClass
+{
+  text-align: right;
+  padding-right: 40px;
+}
+::ng-deep .p-datatable-sm .p-datatable-tbody > tr > td.rightClass
+{
+  text-align: right;
+  padding-right: 40px;
+}

@@ -97,7 +97,7 @@ onRowEditCancel(product: Product, index: number) {
 
     this.sheet.rows = new Set(rows);
     this.sheetDto = this.sheet.calc();
-	
+
     event.data = this.sheetDto.rows
   }
 }

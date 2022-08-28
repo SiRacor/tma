@@ -3,7 +3,7 @@ https://stackblitz.com/edit/primeng-table-addnewrow?file=src%2Fapp%2Fadd-row.dir
 
 <p-toast></p-toast>
 <p-card header="Personen">
-  <p-table #dt1 [value]="sheetDto.persons" dataKey="id" [style]="{width:'200px'}">
+  <p-table #dt1 [value]="sheetDto.persons" styleClass="p-datatable-sm"  dataKey="id" [style]="{width:'200px'}">
     <ng-template pTemplate="header" let-columns>
         <tr>
           <th>Name</th>
@@ -24,7 +24,7 @@ https://stackblitz.com/edit/primeng-table-addnewrow?file=src%2Fapp%2Fadd-row.dir
 </p-card>
 
 <p-card header="Daten">
-  <p-table #dt2 [value]="sheetDto.rows" [columns]="sheetDto.cols" dataKey="id" editMode="row" (sortFunction)="customSort($event)" [customSort]="true">
+  <p-table #dt2 [value]="sheetDto.rows" styleClass="p-datatable-sm" [columns]="sheetDto.cols" dataKey="id" [style]="{width:'1200px'}" editMode="row" (sortFunction)="customSort($event)" [customSort]="true">
     <ng-template pTemplate="header" let-columns>
         <tr>
           <ng-container *ngFor="let col of columns" [ngSwitch]="true">

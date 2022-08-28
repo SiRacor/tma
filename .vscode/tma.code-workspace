@@ -1,0 +1,15 @@
+{
+	"folders": [
+		{
+			"name": "utils",
+			"path": "..\\..\\utils"
+		},
+		{
+			"name": "tma",
+			"path": ".."
+		}
+	],
+	"settings": {
+		"typescript.tsdk": "node_modules\\typescript\\lib"
+	}
+}
