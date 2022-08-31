@@ -158,12 +158,13 @@ export class SheetService {
     let nbSort : (gtr: (row: RowDTO) => number) => (row1:RowDTO, row2:RowDTO) => number =
       (gtr) => (row1:RowDTO, row2:RowDTO) => gtr(row1) < gtr(row2) ? -1 : gtr(row1) > gtr(row2) ? 1 : 0;
 
-	let i = 0;
-	let idGen: () => string = () => "" + i++;
+    let i = 0;
+    let idGen: () => string = () => "" + i++;
+
 
     cols.push({ id: idGen(), label : "Datum", accessor: (row: RowDTO) => row.date, footer: "", sorter: nbSort((row : RowDTO) => row.date.getMilliseconds()), date: true });
     cols.push({ id: idGen(), label : "Von", accessor: (row: RowDTO) => row.paidBy.letter, footer: "", sorter: stSort((row : RowDTO) => nvl(row.paidBy.letter)) });
-    cols.push({ id: idGen(), label : "Für", accessor: (row: RowDTO) => row.paidFor, footer: "", sorter: stSort((row : RowDTO) => count(row.paidFor) > 0 ? row.paidFor[0].letter : "") });
+    cols.push({ id: idGen(), label : "Für", accessor: (row: RowDTO) => toArray(row.paidFor, (pf) => pf.letter).join(""), footer: "", sorter: stSort((row : RowDTO) => count(row.paidFor) > 0 ? row.paidFor[0].letter : "") });
     cols.push({ id: idGen(), label : "Bezeichnung", accessor: (row: RowDTO) => row.label, footer: "", sorter: stSort((row : RowDTO) => row.label)  });
     cols.push({ id: idGen(), label : "Kategorie", accessor: (row: RowDTO) => row.category, footer: "Summe", sorter: stSort((row : RowDTO) => row.category)   });
     cols.push({ id: idGen(), label : "Betrag", accessor: (row: RowDTO) => row.amount, footer: "", sorter: nbSort((row : RowDTO) => row.amount),  number: true });
