@@ -1,6 +1,12 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 
+
+import { ProductService } from './balance/productservice';
+import { SheetDAO } from './balance/sheetdao';
+import { SheetService } from './balance/sheet.service';
+import { SheetServiceBD } from './balance/sheet.service.bd';
+
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
 import { BalanceComponent } from './balance/balance.component';
@@ -11,9 +17,6 @@ import {RouterModule} from '@angular/router';
 import {FormsModule} from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
-
-import { ProductService } from './balance/productservice';
-import { SheetDAO } from './balance/sheetdao';
 
 import {TableModule} from 'primeng/table';
 import {ToastModule} from 'primeng/toast';
@@ -59,7 +62,7 @@ import { AddRowDirective } from './balance/add-row.directive';
     RouterModule,
     CardModule
   ],
-  providers: [ProductService, SheetDAO],
+  providers: [ProductService, SheetService, SheetServiceBD, SheetDAO],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

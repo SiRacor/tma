@@ -3,7 +3,9 @@ import { Injectable } from '@angular/core';
 
 import { Product } from './product';
 
-@Injectable()
+@Injectable({
+  providedIn: 'root'
+})
 export class ProductService {
     getNextId() {
       this.getProductsSmall().then((products: Product[]) => {

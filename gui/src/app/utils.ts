@@ -90,7 +90,7 @@ export class NullSafe {
     return ret;
   }
 
-  public static nvl<T>(a? : T, ...b : T[] | any) : T {
+  public static nvl<T>(a? : T | null, ...b : T[] | any) : T {
     	if (nsc(a) && a != undefined) return a;
       return NullSafe.iterateFunction(b, (v) => nvl(v));
   }

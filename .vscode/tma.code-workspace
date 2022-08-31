@@ -5,8 +5,10 @@
 			"path": "..\\..\\utils"
 		},
 		{
-			"name": "tma",
-			"path": ".."
+			"path": "..\\common"
+		},
+		{
+			"path": "..\\gui"
 		}
 	],
 	"settings": {
