@@ -1,13 +1,19 @@
 {
   "name": "tma",
   "version": "0.0.0",
+  "description": "Hello World!",
+  "main": "main.js",
+  "author": "SiRacor",
+  "license": "MIT",
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "ng build --base-href .",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
-    "link": "npm link ../../utils ../common"
+    "link": "npm link ../../utils ../common",
+    "electron": "copy /Y src\\electron\\* dist\\ && electron .\\dist\\",
+    "package-win": "electron-packager .\\dist\\ TMA  --icon=favicon.ico --overwrite --asar --platform=win32 --arch=ia32  --prune=true --out=../package --version-string.CompanyName=SiRacor --version-string.FileDescription=SiRacor --version-string.ProductName=\"TMA\""
   },
   "private": true,
   "dependencies": {
@@ -34,6 +40,8 @@
     "@angular/compiler-cli": "^14.1.0",
     "@types/jasmine": "~4.0.0",
     "@types/node": "^18.6.3",
+    "electron": "^20.1.0",
+    "electron-packager": "^16.0.0",
     "jasmine-core": "~4.2.0",
     "karma": "~6.4.0",
     "karma-chrome-launcher": "~3.1.0",

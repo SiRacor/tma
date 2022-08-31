@@ -1,14 +1,10 @@
 {
 	"folders": [
 		{
-			"name": "utils",
+			"path": ".."
+		},
+		{
 			"path": "..\\..\\utils"
-		},
-		{
-			"path": "..\\common"
-		},
-		{
-			"path": "..\\gui"
 		}
 	],
 	"settings": {
