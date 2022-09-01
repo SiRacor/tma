@@ -37,21 +37,71 @@ https://stackblitz.com/edit/primeng-table-addnewrow?file=src%2Fapp%2Fadd-row.dir
           </ng-container>
         </tr>
     </ng-template>
-    <ng-template pTemplate="body" let-rowData let-columns="columns">
-        <tr>
-			  <ng-container *ngFor="let col of columns" [ngSwitch]="true">
-				  <td class="rightClass" *ngSwitchCase="col.number">{{col.accessor(rowData) | number: '1.2-2'}}</td>
-				  <td *ngSwitchCase="col.date">{{col.accessor(rowData)  | date: 'dd.MM.yyyy'}}</td>
-				  <td *ngSwitchDefault>{{col.accessor(rowData)}}</td>
-			  </ng-container>
+    <ng-template pTemplate="body" let-rowData let-columns="columns" let-editing="editing" let-ri="rowIndex">
+        <tr [pEditableRow]="rowData">
+          <ng-container *ngFor="let col of columns" [ngSwitch]="true">
+
+            <td *ngSwitchCase="col.editable">
+              <p-cellEditor>
+
+                <ng-template pTemplate="input" [ngSwitch]="true">
+                  <p-calendar *ngSwitchCase="col.type=='date'" styleClass="calendar" [inputStyle]="{'width':'100px'}"
+                      [(ngModel)]="col.delegate.var(rowData).value"
+                      appendTo="body"
+                      dateFormat="{{'dd.mm.yy'}}"
+                      placeholder="Select">
+                  </p-calendar>
+                  <p-dropdown *ngSwitchCase="col.type=='person'" [options]="sheetDto.persons" optionLabel="name" appendTo="body" [(ngModel)]="col.delegate.var(rowData).value"></p-dropdown>
+                  <input style="width: 80px" *ngSwitchDefault pInputText type="text" [(ngModel)]="col.delegate.var(rowData).value">
+                  </ng-template>
+
+                <ng-template pTemplate="output"[ngSwitch]="true">
+
+                  <ng-container *ngSwitchCase="col.type=='number'">
+                    {{col.delegate.var(rowData).value | number: '1.2-2'}}
+                  </ng-container>
+                  <ng-container *ngSwitchCase="col.type=='date'">
+                    {{col.delegate.var(rowData).value | date: 'dd.MM.yyyy'}}
+                  </ng-container>
+                  <ng-container *ngSwitchCase="col.type=='person'">
+                    {{col.delegate.var(rowData).value.letter}}
+                  </ng-container>
+                  <ng-container *ngSwitchDefault>
+                    {{col.delegate.var(rowData).value}}
+                  </ng-container>
+
+                </ng-template>
+
+              </p-cellEditor>
+            </td>
+
+            <ng-container *ngSwitchDefault [ngSwitch]="true">
+
+              <td *ngSwitchCase="col.type=='number'" class="rightClass">
+                {{col.delegate.var(rowData).value | number: '1.2-2'}}
+              </td>
+              <td *ngSwitchCase="col.type=='date'">
+                {{col.delegate.var(rowData).value | date: 'dd.MM.yyyy'}}
+              </td>
+              <td *ngSwitchDefault>
+                {{col.delegate.var(rowData).value}}
+              </td>
+
+            </ng-container>
+
+          </ng-container>
+          <td style="text-align:center">
+              <button *ngIf="!editing" pButton pRipple type="button" pInitEditableRow icon="pi pi-pencil" (click)="onRowEditInit(rowData)" class="p-button-rounded p-button-text"></button>
+              <button *ngIf="editing" pButton pRipple type="button" pSaveEditableRow icon="pi pi-check" (click)="onRowEditSave(rowData)" class="p-button-rounded p-button-text p-button-success mr-2"></button>
+              <button *ngIf="editing" pButton pRipple type="button" pCancelEditableRow icon="pi pi-times" (click)="onRowEditCancel(rowData, ri)" class="p-button-rounded p-button-text p-button-danger"></button>
+          </td>
         </tr>
     </ng-template>
     <ng-template pTemplate="footer" let-columns>
       <tr>
 	  <ng-container *ngFor="let col of columns" [ngSwitch]="true">
-          <td class="rightClass" *ngSwitchCase="col.number">{{col.footer | number: '1.2-2'}}</td>
-          <td *ngSwitchCase="col.date">{{col.footer | date: 'dd.MM.yyyy'}}</td>
-          <td *ngSwitchDefault>{{col.footer}}</td>
+        <td class="rightClass" *ngSwitchCase="col.type=='number'">{{col.footer | number: '1.2-2'}}</td>
+        <td *ngSwitchDefault>{{col.footer}}</td>
 	  </ng-container>
 	   </tr>
     </ng-template>

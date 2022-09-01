@@ -1,8 +1,13 @@
 import { RowDTO } from "./RowDTO";
+import { AccessorDelegate } from 'utils';
+import { ColType } from "./ColType";
 
 export interface ColDTO {
   id: string,
-  label: string, accessor: (row: RowDTO) => any, footer: any,
+  label: string,
+  footer: any,
   sorter: (row1:RowDTO, row2:RowDTO) => number,
-  number?: boolean, date?: boolean
+  editable?: boolean,
+  type? : ColType,
+  delegate: AccessorDelegate<RowDTO, any, any>;
 }

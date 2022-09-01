@@ -9,3 +9,7 @@
   text-align: right;
   padding-right: 40px;
 }
+
+.calendar input {
+  width: 50px !important
+}

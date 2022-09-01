@@ -1,7 +1,8 @@
 import { Injectable } from "@angular/core";
-import { ColDTO, PersonDTO, RowDTO, SheetDTO } from "common";
+import { ColDTO, ColType, PersonDTO, RowDTO, SheetDTO } from "common";
 import { NullSafe, Stream, Equality } from '../utils';
 import { Person, Row, Sheet } from './sheet';
+import { AccessorDelegate } from 'utils';
 const { nsc, nvl, wth } = NullSafe;
 const { eq } = Equality;
 const { forEach, findFirst, toArray, toMap, toEntry, count } = Stream;
@@ -45,6 +46,10 @@ export class SheetService {
 
     if (nsc(row)) {
       row.amount = rowDto.amount;
+      row.date = rowDto.date;
+      row.label = rowDto.label;
+      row.category = rowDto.category;
+      row.paidBy = rowDto.paidBy;
 
       forEach(row.paidFor, (pf) => row.removePaidFor(pf));
       forEach(paidFor, (pf) => row.addPaidFor(pf));
@@ -102,25 +107,26 @@ export class SheetService {
     let res : RowDTO[] = new Array();
     let cols : ColDTO[] = new Array();
     let total : Map<PersonDTO, number> = new Map();
+    let persons : PersonDTO[] = toArray(this.sheet.persons, (pers) => this.toPersonDTO(pers));
 
-    let personDtos : Map<string, PersonDTO> = new Map();
+    let persById : (id: number) => PersonDTO =
+      (id: number) => findFirst(persons, (p) => p.id == id);
 
-
-    forEach(this.sheet.persons, (person) => personDtos.set(person.name,
-       { id: person.id, letter : person.letter, name : person.name }));
+    let persByLetter : (letter: string) => PersonDTO =
+      (letter: string) => findFirst(persons, (p) => p.letter == letter);
 
     forEach(this.sheet.rows, (row) => {
 
       forEach(row.entries, (entry) => {
-        total.set(nvl(personDtos.get(entry.target.name)),
-         nvl(total.get(nvl(personDtos.get(entry.target.name))), 0) + entry.due)
+        total.set(nvl(persById(entry.target.id)),
+         nvl(total.get(nvl(persById(entry.target.id))), 0) + entry.due)
       });
 
       let paidFor: PersonDTO[] = toArray(row.paidFor, (val) => this.toPersonDTO(val));
 
       let rowDto : RowDTO = { id: row.id, date: row.date, paidBy : this.toPersonDTO(row.paidBy),
         paidFor: paidFor, label : row.label, category : row.category, amount : row.amount, results : toMap(row.entries,
-           (result) => toEntry(nvl(personDtos.get(result.target.name)), { target: nvl(personDtos.get(result.target.name)), part: result.part, ratio: result.ratio, due: Math.round((result.due + Number.EPSILON) * 100) / 100 } ))
+           (result) => toEntry(nvl(persById(result.target.id)), { target: nvl(persById(result.target.id)), part: result.part, ratio: result.ratio, due: Math.round((result.due + Number.EPSILON) * 100) / 100 } ))
       };
 
       res.push(rowDto);
@@ -132,7 +138,7 @@ export class SheetService {
       amount: 0
     };
 
-    forEach(total.keys(), (person) => {
+    forEach(persons, (person) => {
 
       let amount : number = nvl(total.get(person), 0);
       let rounded : number = Math.round((amount + Number.EPSILON) * 100) / 100;
@@ -162,38 +168,109 @@ export class SheetService {
     let idGen: () => string = () => "" + i++;
 
 
-    cols.push({ id: idGen(), label : "Datum", accessor: (row: RowDTO) => row.date, footer: "", sorter: nbSort((row : RowDTO) => row.date.getMilliseconds()), date: true });
-    cols.push({ id: idGen(), label : "Von", accessor: (row: RowDTO) => row.paidBy.letter, footer: "", sorter: stSort((row : RowDTO) => nvl(row.paidBy.letter)) });
-    cols.push({ id: idGen(), label : "Für", accessor: (row: RowDTO) => toArray(row.paidFor, (pf) => pf.letter).join(""), footer: "", sorter: stSort((row : RowDTO) => count(row.paidFor) > 0 ? row.paidFor[0].letter : "") });
-    cols.push({ id: idGen(), label : "Bezeichnung", accessor: (row: RowDTO) => row.label, footer: "", sorter: stSort((row : RowDTO) => row.label)  });
-    cols.push({ id: idGen(), label : "Kategorie", accessor: (row: RowDTO) => row.category, footer: "Summe", sorter: stSort((row : RowDTO) => row.category)   });
-    cols.push({ id: idGen(), label : "Betrag", accessor: (row: RowDTO) => row.amount, footer: "", sorter: nbSort((row : RowDTO) => row.amount),  number: true });
+    cols.push({
+      id: idGen(),
+      label: 'Datum',
+      footer: '',
+      sorter: nbSort((row: RowDTO) => row.date.getDate()),
+      type: ColType.date,
+      editable: true,
+      delegate: new AccessorDelegate(
+        (row: RowDTO) => row.date,
+        (row: RowDTO, value: Date) => row.date = value
+      )
+    });
+    cols.push({
+      id: idGen(),
+      label: 'Von',
+      footer: '',
+      sorter: stSort((row: RowDTO) => nvl(row.paidBy.letter)),
+      type: ColType.person,
+      editable: true,
+      delegate: new AccessorDelegate(
+        (row: RowDTO) => row.paidBy,
+        (row: RowDTO, value: PersonDTO) => row.paidBy = value,
+        (row: RowDTO) => row.paidBy.letter,
+      )
+    });
+    cols.push({
+      id: idGen(),
+      label: 'Für',
+      footer: '',
+      sorter: stSort((row: RowDTO) =>
+        count(row.paidFor) > 0 ? row.paidFor[0].letter : ''
+      ),
+      type: ColType.persons,
+      editable: true,
+      delegate: new AccessorDelegate(
+        (row: RowDTO) => toArray(row.paidFor, (pf) => pf.letter).join(''),
+        (row: RowDTO, value: string) => row.paidFor = toArray(value, (s) => persByLetter(s)),
+        (row: RowDTO) => toArray(row.paidFor, (pf) => pf.letter).join(''),
+      )
+    });
+    cols.push({
+      id: idGen(),
+      label: 'Bezeichnung',
+      footer: '',
+      sorter: stSort((row: RowDTO) => row.label),
+      editable: true,
+      delegate: new AccessorDelegate(
+        (row: RowDTO) => row.label,
+        (row: RowDTO, value: string) => row.label = value
+      )
+    });
+    cols.push({
+      id: idGen(),
+      label: 'Kategorie',
+      footer: 'Summe',
+      sorter: stSort((row: RowDTO) => row.category),
+      editable: true,
+      delegate: new AccessorDelegate(
+        (row: RowDTO) => row.category,
+        (row: RowDTO, value: string) => row.category = value
+      )
+    });
+    cols.push({
+      id: idGen(),
+      label: 'Betrag',
+      footer: '',
+      sorter: nbSort((row: RowDTO) => row.amount),
+      type: ColType.number,
+      editable: true,
+      delegate: new AccessorDelegate(
+        (row: RowDTO) => row.amount,
+        (row: RowDTO, value: number) => row.amount = value
+      )
+    });
 
     forEach(this.sheet.persons, (person) => {
 
-      let pdto : PersonDTO = nvl(personDtos.get(person.name));
+      let pdto : PersonDTO = nvl(persById(person.id));
 
       cols.push({
         id: idGen(),
         label : "",
-        accessor: (row: RowDTO) =>
-           wth(row.results.get(pdto), "", (rs) => rs.part),
         footer: "",
-        sorter: emptSort
+        sorter: emptSort,
+        delegate: new AccessorDelegate(
+          (row: RowDTO) => wth(row.results.get(pdto), "", (rs) => rs.part)
+        )
       });
 
       cols.push({
         id: idGen(),
         label : person.name + " (" + person.letter + ")",
-        accessor: (row: RowDTO) => wth(row.results.get(pdto), 0, (rs) => rs.due),
         footer: total.get(pdto),
         sorter: nbSort((row : RowDTO) => wth(row.results.get(pdto), 0, (rs) => rs.due)),
-        number: true
+        type: ColType.number,
+        delegate: new AccessorDelegate(
+          (row: RowDTO) => wth(row.results.get(pdto), "", (rs) => rs.due)
+        )
       });
 
     });
 
-    return { id: this.sheet.id, persons: Array.from(total.keys()), rows: res, cols: cols, total : total };
+    return { id: this.sheet.id, persons: persons, rows: res, cols: cols, total : total };
   };
 
   public readSheets(sheetId : number) : SheetDTO[] {

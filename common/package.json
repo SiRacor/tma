@@ -9,6 +9,7 @@
   ],
   "scripts": {
     "build": "tsc",
+    "link": "npm link ../../utils",
     "test": "npx jasmine"
   },
   "author": "SiRacor",

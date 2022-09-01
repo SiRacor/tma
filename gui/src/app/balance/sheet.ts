@@ -78,10 +78,10 @@ export class Row {
   public constructor(
       public readonly id: number,
       public date: Date,
-      public readonly paidBy: Person,
+      public paidBy: Person,
       paidFor: Person[],
-      public readonly label: string,
-      public readonly category: string,
+      public label: string,
+      public category: string,
       amount: number, sheet: Sheet) {
 
     this.id = id;
@@ -124,8 +124,9 @@ export class Row {
   }
 
   private addToSheet(pers : Person) : void {
-    if (!anyMatch(this.sheet.persons, (p) => p == pers)) {
+    if (!anyMatch(this.sheet.persons, (p) => p.id == pers.id)) {
       this.sheet.persons.add(pers);
+      console.log(this.sheet.persons)
     }
   }
 

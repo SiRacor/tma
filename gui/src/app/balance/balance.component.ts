@@ -26,10 +26,12 @@ export class BalanceComponent implements OnInit {
 
   products2: Product[] = [];
 
+  currentSort? : SortEvent;
+
   sheetDto!: SheetDTO;
 
   statuses: SelectItem[] = [];
-  clonedProducts: { [s: string]: Product; } = {};
+  clonedProducts: { [s: string]: RowDTO; } = {};
 
   constructor(public productService: ProductService, private messageService: MessageService,
     private sheetServiceBD : SheetServiceBD) { }
@@ -64,30 +66,36 @@ export class BalanceComponent implements OnInit {
     if (this.sheetDto) console.log(this.sheetDto);
   }
 
-  onRowEditInit(product: Product) {
-    if (product.id != undefined) {
-      this.clonedProducts[product.id] = {...product};
+  onRowEditInit(row: RowDTO) {
+    if (row.id != undefined) {
+      this.clonedProducts[row.id] = {...row};
     }
 }
 
-onRowEditSave(product: Product) {
-    if (product.id == undefined) {
-      product.id = this.productService.getNextId() + "";
+onRowEditSave(row: RowDTO) {
+    if (row.id == undefined) {
+      row.id = 100;
     }
-    if (product.price != undefined && product.id != undefined && product.price > 0) {
-        delete this.clonedProducts[product.id];
-        this.messageService.add({severity:'success', summary: 'Success', detail:'Product is updated'});
+    console.log(row);
+    if (row.amount != undefined && row.id != undefined && row.amount <= 0) {
+      delete this.clonedProducts[row.id];
+
+      let sheetId = 0;
+      let bd = this.sheetServiceBD;
+
+      bd.saveRow(row, sheetId);
+
+      this.messageService.add({severity:'success', summary: 'Success', detail:'Row is updated'});
     }
     else {
-        this.messageService.add({severity:'error', summary: 'Error', detail:'Invalid Price'});
+        this.messageService.add({severity:'error', summary: 'Error', detail:'Invalid amount'});
     }
+    this.sheetDto = this.sheetServiceBD.read(0);
+    if (this.currentSort) this.customSort(this.currentSort);
 }
 
-onRowEditCancel(product: Product, index: number) {
-  if (product.id != undefined) {
-    this.products2[index] = this.clonedProducts[product.id];
-    delete this.products2[+product.id];
-  }
+onRowEditCancel(row: RowDTO, index: number) {
+  this.sheetDto = this.sheetServiceBD.read(0);
 }
   newRow() {
     return { id: this.productService.getNextId() + "", code: 'asf', name: 'asf', inventoryStatus: 'INSTOCK', price: '0.3' };
@@ -96,6 +104,7 @@ onRowEditCancel(product: Product, index: number) {
   customSort(event: SortEvent) {
 
     let rows: RowDTO[] = this.sheetDto.rows;
+    this.currentSort = event;
 
     rows.sort((data1, data2) => {
       let result = 0;

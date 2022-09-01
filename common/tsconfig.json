@@ -3,7 +3,8 @@
     "module": "es2020",
     "target": "es2020",
     "declaration": true,
-    "outDir": "./dist"
+    "outDir": "./dist",
+    "moduleResolution": "node"
   },
   "include": [
     "src/**/*"

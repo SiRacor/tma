@@ -1,3 +1,3 @@
-cd C:\Projekte\tma
+cd C:\Projekte\tma\gui
 npm install
 pause
