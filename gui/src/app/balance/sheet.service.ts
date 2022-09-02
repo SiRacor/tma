@@ -203,8 +203,8 @@ export class SheetService {
       type: ColType.persons,
       editable: true,
       delegate: new AccessorDelegate(
-        (row: RowDTO) => toArray(row.paidFor, (pf) => pf.letter).join(''),
-        (row: RowDTO, value: string) => row.paidFor = toArray(value, (s) => persByLetter(s)),
+        (row: RowDTO) => row.paidFor,
+        (row: RowDTO, value: PersonDTO[]) => row.paidFor = value,
         (row: RowDTO) => toArray(row.paidFor, (pf) => pf.letter).join(''),
       )
     });

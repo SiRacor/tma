@@ -8,9 +8,10 @@ import { PersonDTO, RowDTO, SheetDTO } from "common";
 import { SheetServiceBD } from './sheet.service.bd';
 import { Component } from '@angular/core';
 import { OnInit } from '@angular/core';
+import { ResultDTO } from '../../../../common/dist/balance/ResultDTO';
 
-const { findFirst } = Stream;
-const { wth } = NullSafe;
+const { findFirst, forEach, toMap, toEntry } = Stream;
+const { wth, nsc } = NullSafe;
 const { eq } = Equality;
 
 
@@ -66,18 +67,50 @@ export class BalanceComponent implements OnInit {
     if (this.sheetDto) console.log(this.sheetDto);
   }
 
+  public get personsPlusA() : PersonDTO[]{
+    let ret : PersonDTO[] = Array.from(this.sheetDto.persons);
+    ret.push({ id: -1, name: "Alle", letter: "A"});
+    return ret;
+  }
+
   onRowEditInit(row: RowDTO) {
     if (row.id != undefined) {
       this.clonedProducts[row.id] = {...row};
     }
-}
+  }
 
-onRowEditSave(row: RowDTO) {
+  onRowNewInit(row: RowDTO): RowDTO {
+
+    let lastRow: RowDTO = null;
+
+    forEach(this.sheetDto.rows, (r) => !nsc(lastRow) || r.id > lastRow.id, (r) => lastRow = r);
+
+    if (!nsc(lastRow)) {
+      let results : Map<PersonDTO, ResultDTO> = toMap(this.sheetDto.persons,
+        (p) => toEntry(p, <ResultDTO> { target: p, part: "0", ratio: 0, due: 0 }));
+      row = { id: 0, date: new Date(), paidBy: null, paidFor: new Array(0),
+        results: results, label: "", category: "", amount: 0 };
+    }
+
+    if (!nsc(row)) {
+      row = lastRow;
+    }
+
+    return { id: lastRow.id + 1, date: row.date, paidBy: row.paidBy, paidFor: Array.from(row.paidFor),
+      label: row.label, category: row.category, amount: row.amount,
+      results: toMap(row.results?.entries(), (e)=> toEntry(e[0], e[1]))};
+  }
+
+  onRowEditSave(row: RowDTO) {
+
+    let maxId = 0;
+    forEach(this.sheetDto.rows, (r) => r.id > maxId, (r) => maxId = r.id);
+
     if (row.id == undefined) {
-      row.id = 100;
+      row.id = ++maxId;
     }
     console.log(row);
-    if (row.amount != undefined && row.id != undefined && row.amount <= 0) {
+    if (row.amount != undefined && row.id != undefined) {
       delete this.clonedProducts[row.id];
 
       let sheetId = 0;
@@ -88,7 +121,7 @@ onRowEditSave(row: RowDTO) {
       this.messageService.add({severity:'success', summary: 'Success', detail:'Row is updated'});
     }
     else {
-        this.messageService.add({severity:'error', summary: 'Error', detail:'Invalid amount'});
+        this.messageService.add({severity:'error', summary: 'Error', detail:'Invalid id'});
     }
     this.sheetDto = this.sheetServiceBD.read(0);
     if (this.currentSort) this.customSort(this.currentSort);
