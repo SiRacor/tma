@@ -1,9 +1,14 @@
+import { SheetService } from './sheet.service';
 import { TestBed } from '@angular/core/testing';
 import { Assert } from '../assert';
+import { Stream, NullSafe } from '../utils';
 import { SheetDAO } from './sheetdao';
-import { Sheet, Row, Person, SheetDTO } from './sheet';
+import { Sheet, Row } from './sheet';
+import { PersonDTO, RowDTO } from 'common';
 
 const { getMatcher, getBool, assertTrue, assertFalse, assertEq, assertNeq} = Assert;
+const { findFirst } = Stream;
+const { wth } = NullSafe;
 
 describe('SheetdaoService', () => {
   let service: SheetDAO;
@@ -20,20 +25,23 @@ describe('SheetdaoService', () => {
 
   it('Sheet', () => {
 
-    let sira : Person = new Person("Sira", "W") ;
-    let sky : Person = new Person("Sky", "S") ;
-    let julia : Person = new Person("Julia", "J") ;
+    let sira : PersonDTO = { id: 1, name: "Sky", letter: "W" } ;
+    let sky : PersonDTO = { id: 2, name: "Sira", letter: "S" } ;
+    let julia : PersonDTO = { id: 3, name: "Julia", letter: "J" };
 
-    let sheet : Sheet = new Sheet(new Set([julia, sky, sira]));
+    let service: SheetService = new SheetService();
+    service.savePerson(sira, 0);
+    service.savePerson(sky, 0);
+    service.savePerson(julia, 0);
 
-    sheet.rows.add(new Row(1, new Date(), sira, [ sky, julia ], "Spar", "Essen", -10.40, sheet));
-    sheet.rows.add(new Row(2, new Date(), sira, [ sira, sky, julia ], "Spar", "Essen", -5, sheet));
+    service.saveRow({ id: 1, date: new Date(), paidBy: sira, paidFor: [sky, julia], label: "Spar", category: "Essen", amount: -10.40 }, 0)
+    service.saveRow({ id: 2, date: new Date(), paidBy: sira, paidFor: [sira, sky, julia], label: "Spar", category: "Essen", amount: -5 }, 0)
 
-    let dto = sheet.calc();
+    let dto = service.read(0)
 
-    assertEq(dto.total.get(julia), 6.87);
-    assertEq(dto.total.get(sky), 6.86);
-    assertEq(dto.total.get(sira), -13.73);
+    assertEq(findFirst(dto.total.entries(), (entry) => entry[0].id == sky.id)[1], 6.86);
+    assertEq(findFirst(dto.total.entries(), (entry) => entry[0].id == julia.id)[1], 6.87);
+    assertEq(findFirst(dto.total.entries(), (entry) => entry[0].id == sira.id)[1], -13.73);
 
   });
 

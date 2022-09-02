@@ -10,7 +10,7 @@
     "start": "ng serve",
     "build": "ng build --base-href .",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
+    "test": "ng test --code-coverage",
     "link": "npm link ../../utils ../common",
     "electron": "copy /Y src\\electron\\* dist\\ && electron .\\dist\\",
     "build & electron": "npm run build && npm run electron",
@@ -46,9 +46,9 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.0.0",
     "ng-packagr": "^14.1.0",
-    "typescript": "~4.7.2",
     "rxjs": "~7.5.0",
     "tslib": "^2.3.0",
+    "typescript": "~4.7.2",
     "zone.js": "~0.11.4"
   }
 }

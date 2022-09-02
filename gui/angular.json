@@ -95,38 +95,7 @@
             "styles": [
               "src/styles.css"
             ],
-            "scripts": []
-          }
-        }
-      }
-    },
-    "commons": {
-      "projectType": "library",
-      "root": "projects/commons",
-      "sourceRoot": "projects/commons/src",
-      "prefix": "lib",
-      "architect": {
-        "build": {
-          "builder": "@angular-devkit/build-angular:ng-packagr",
-          "options": {
-            "project": "projects/commons/ng-package.json"
-          },
-          "configurations": {
-            "production": {
-              "tsConfig": "projects/commons/tsconfig.lib.prod.json"
-            },
-            "development": {
-              "tsConfig": "projects/commons/tsconfig.lib.json"
-            }
-          },
-          "defaultConfiguration": "production"
-        },
-        "test": {
-          "builder": "@angular-devkit/build-angular:karma",
-          "options": {
-            "main": "projects/commons/src/test.ts",
-            "tsConfig": "projects/commons/tsconfig.spec.json",
-            "karmaConfig": "projects/commons/karma.conf.js"
+            "codeCoverage": true
           }
         }
       }
