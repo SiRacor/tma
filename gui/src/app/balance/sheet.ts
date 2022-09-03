@@ -96,13 +96,13 @@ export class Row {
   public calc() : void {
 
     this.entries.clear();
-    let self : boolean = anyMatch(this.paidFor, (pf) => eq(pf, this.paidBy));
+    let self : boolean = anyMatch(this.paidFor, (pf) => eq(pf.id, this.paidBy.id));
     let cntPf : number = count(this.paidFor);
 
     this.addToSheet(this.paidBy);
 
     if (!self) {
-      this.entries.add({ target : this.paidBy, part: "-1", ratio: 1,  due: this.amount });
+      this.entries.add({ target : this.paidBy, part: "-1", ratio: 1,  due: this.amount * 1 });
     }
 
     forEach(this.paidFor, (pf) => {
@@ -112,12 +112,11 @@ export class Row {
       let a : number = 0;
       let b : number = cntPf;
 
-      if (eq(pf, this.paidBy)) {
+      if (eq(pf.id, this.paidBy.id)) {
         a = (cntPf - 1);
       } else {
         a = -1
       }
-
       this.entries.add({ target : pf, part: (a* -1) + "/" + b, ratio: a / b,  due: this.amount * a / b});
     })
   }
@@ -125,7 +124,6 @@ export class Row {
   private addToSheet(pers : Person) : void {
     if (!anyMatch(this.sheet.persons, (p) => p.id == pers.id)) {
       this.sheet.persons.add(pers);
-      console.log(this.sheet.persons)
     }
   }
 

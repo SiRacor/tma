@@ -11,7 +11,7 @@ import { OnInit } from '@angular/core';
 import { ResultDTO } from '../../../../common/dist/balance/ResultDTO';
 
 const { findFirst, forEach, toMap, toEntry } = Stream;
-const { wth, nsc } = NullSafe;
+const { wth, nsc, emp } = NullSafe;
 const { eq } = Equality;
 
 
@@ -50,21 +50,25 @@ export class BalanceComponent implements OnInit {
     let bd = this.sheetServiceBD;
     let sheetId = 0;
 
-    bd.savePerson(julia, sheetId);
-    bd.savePerson(sky, sheetId);
-    bd.savePerson(sira, sheetId);
+    this.sheetDto = this.sheetServiceBD.read(sheetId);
+    if (emp(this.sheetDto.rows)) {
 
-    bd.saveRow({ id: 1, date: new Date(), paidBy: sira, paidFor: [sky, julia],
-      label: "Spar", category: "Essen", amount: -10.40}, sheetId);
+      bd.savePerson(julia, sheetId);
+      bd.savePerson(sky, sheetId);
+      bd.savePerson(sira, sheetId);
 
-    bd.saveRow({ id: 2, date: new Date(), paidBy: sira, paidFor: [sira, sky, julia],
-      label: "Spar", category: "Essen", amount: -5}, sheetId);
+      bd.saveRow({ id: 1, date: new Date(), paidBy: sira, paidFor: [sky, julia],
+        label: "Spar", category: "Essen", amount: -10.40}, sheetId);
 
-    bd.saveRow({ id: 3, date: new Date(), paidBy: sky, paidFor: [sky, julia],
-      label: "Spar", category: "Essen", amount: -6}, sheetId);
+      bd.saveRow({ id: 2, date: new Date(), paidBy: sira, paidFor: [sira, sky, julia],
+        label: "Spar", category: "Essen", amount: -5}, sheetId);
 
-    this.sheetDto = this.sheetServiceBD.read(0);
-    if (this.sheetDto) console.log(this.sheetDto);
+      bd.saveRow({ id: 3, date: new Date(), paidBy: sky, paidFor: [sky, julia],
+        label: "Spar", category: "Essen", amount: -6}, sheetId);
+
+      this.sheetDto = this.sheetServiceBD.read(sheetId);
+
+    }
   }
 
   public get personsPlusA() : PersonDTO[]{

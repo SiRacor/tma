@@ -10,28 +10,48 @@ const { forEach, findFirst, toArray, toMap, toEntry, count } = Stream;
 @Injectable()
 export class SheetService {
 
+  public static readonly STORAGE_ID: string = "polycule balance sheet";
   protected sheet!: Sheet;
 
   constructor () {
 
     this.sheet = new Sheet();
-    let data: string = localStorage.getItem("polycule balance sheet") + "";
+    let data: string = localStorage.getItem(SheetService.STORAGE_ID) + "";
 
     wth(<SheetDTO> JSON.parse(data), (dto) => {
 
       this.sheet.id = dto.id;
 
       forEach(dto.persons, (person) =>
-        this.savePerson(person, this.sheet.id)
+        this.savePersonInt(person, this.sheet.id)
       );
 
       forEach(dto.rows, (row) =>
-        this.saveRow(row, this.sheet.id)
+        this.saveRowInt(row, this.sheet.id)
       );
     });
+
+
+  }
+
+  protected store() : void {
+    let dto: SheetDTO = this.read(0);
+
+    dto.cols = new Array();
+    dto.total = new Map();
+
+    forEach(dto.rows, (r) => r.results = new Map());
+
+    localStorage.setItem(SheetService.STORAGE_ID, JSON.stringify(dto))
   }
 
   public saveRow(rowDto: RowDTO, sheetId : number) : number {
+    let ret: number = this.saveRowInt(rowDto, sheetId);
+    this.store();
+    return ret;
+  }
+
+  protected saveRowInt(rowDto: RowDTO, sheetId : number) : number {
 
     let persResolver: (persDto: PersonDTO) => Person = (persDto) =>
       nvl(
@@ -67,14 +87,20 @@ export class SheetService {
   };
 
   public deleteRow(rowId: number, sheetId : number) : boolean {
-
-    return wth(findFirst(this.sheet.rows, (row) => row.id == rowId), (row) =>
-
+    let ret : boolean = wth(findFirst(this.sheet.rows, (row) => row.id == rowId), (row) =>
       this.sheet.rows.delete(row)
     );
+    this.store();
+    return ret;
   };
 
   public savePerson(personDto: PersonDTO, sheetId : number) : number {
+    let ret: number = this.savePersonInt(personDto, sheetId);
+    this.store();
+    return ret;
+  }
+
+  protected savePersonInt(personDto: PersonDTO, sheetId : number) : number {
 
     let person : Person | null =
       findFirst(this.sheet.persons, (pers) => pers.name == personDto.name);
@@ -90,16 +116,17 @@ export class SheetService {
       this.sheet.persons.add(person);
 
     }
-
     return person.id;
   };
 
   public deletePerson(personId: number, sheetId : number) : boolean {
 
-    return wth(findFirst(this.sheet.persons, (person) => person.id == personId), (person) =>
+    let ret : boolean = wth(findFirst(this.sheet.persons, (person) => person.id == personId), (person) =>
 
       this.sheet.persons.delete(person)
     );
+    this.store();
+    return ret;
   };
 
   public read(sheetId : number) : SheetDTO | null {
