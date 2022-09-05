@@ -14,20 +14,20 @@ export class SheetServiceBD {
     this.sheetService = new SheetService();
   }
 
-  public saveRow(row: RowDTO, sheetId : number) : void {
-    this.sheetService.saveRow(row, sheetId);
+  public saveRow(row: RowDTO, sheetId : number) : number {
+    return this.sheetService.saveRow(row, sheetId);
   };
 
-  public deleteRow(rowId: number, sheetId : number) : void {
-    this.sheetService.deleteRow(rowId, sheetId);
+  public deleteRow(rowId: number, sheetId : number) : boolean {
+    return this.sheetService.deleteRow(rowId, sheetId);
   };
 
-  public savePerson(person: PersonDTO, sheetId : number) : void {
-    this.sheetService.savePerson(person, sheetId);
+  public savePerson(person: PersonDTO, sheetId : number) : number {
+    return this.sheetService.savePerson(person, sheetId);
   };
 
-  public deletePerson(personId: number, sheetId : number) : void {
-    this.sheetService.deletePerson(personId, sheetId);
+  public deletePerson(personId: number, sheetId : number) : boolean {
+    return this.sheetService.deletePerson(personId, sheetId);
   };
 
   public read(sheetId : number) : SheetDTO | null {

@@ -1,14 +1,14 @@
 
-import { SelectItem, SortEvent } from 'primeng/api';;
+import { SelectItem, SortEvent, MenuItem, MessageService } from 'primeng/api';;
 import { ProductService } from './productservice';
 import { Product } from './product';
-import { MessageService } from 'primeng/api';
 import { Stream, NullSafe, Equality } from '../utils';
 import { PersonDTO, RowDTO, SheetDTO } from "common";
 import { SheetServiceBD } from './sheet.service.bd';
-import { Component } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { OnInit } from '@angular/core';
 import { ResultDTO } from '../../../../common/dist/balance/ResultDTO';
+import { Table } from 'primeng/table';
 
 const { findFirst, forEach, toMap, toEntry } = Stream;
 const { wth, nsc, emp } = NullSafe;
@@ -31,8 +31,13 @@ export class BalanceComponent implements OnInit {
 
   sheetDto!: SheetDTO;
 
+  rowMenuItems: MenuItem[];
+  personMenuItems: MenuItem[];
+
+  selectedRow: RowDTO;
+  selectedPerson: PersonDTO;
+
   statuses: SelectItem[] = [];
-  clonedProducts: { [s: string]: RowDTO; } = {};
 
   constructor(public productService: ProductService, private messageService: MessageService,
     private sheetServiceBD : SheetServiceBD) { }
@@ -40,6 +45,15 @@ export class BalanceComponent implements OnInit {
   ngOnInit() {
     this.productService.getProductsSmall().then(data => this.products1 = data);
     this.productService.getProductsSmall().then(data => this.products2 = data);
+
+    this.rowMenuItems = [
+      {label: 'Kopiere', icon: 'pi pi-fw pi-copy', command: () => this.onRowCopy(this.selectedRow)},
+      {label: 'L\u00f6sche', icon: 'pi pi-fw pi-times', command: () => this.onItemDelete(this.selectedRow)}
+    ];
+
+    this.personMenuItems = [
+      {label: 'L\u00f6sche', icon: 'pi pi-fw pi-times', command: () => this.onItemDelete(this.selectedPerson)}
+    ];
 
     this.statuses = [{label: 'In Stock', value: 'INSTOCK'},{label: 'Low Stock', value: 'LOWSTOCK'},{label: 'Out of Stock', value: 'OUTOFSTOCK'}]
 
@@ -77,10 +91,24 @@ export class BalanceComponent implements OnInit {
     return ret;
   }
 
-  onRowEditInit(row: RowDTO) {
-    if (row.id != undefined) {
-      this.clonedProducts[row.id] = {...row};
+  @ViewChild('dt', {static: false}) private docDataTable: Table;
+
+
+  onRowCopy(row: RowDTO) {
+    let copy : RowDTO = this.onRowNewInit(row);
+    let values : any[] = <any[]>this.docDataTable.value;
+
+    let index = values.length;
+
+    for (let i = 0; i < values.length; i++){
+      if (values[i].id === row.id) {
+        index = i + 1;
+        break;
+      }
     }
+
+    values.splice(index, 0, copy);
+    this.docDataTable.initRowEdit(copy);
   }
 
   onRowNewInit(row: RowDTO): RowDTO {
@@ -105,6 +133,17 @@ export class BalanceComponent implements OnInit {
       results: toMap(row.results?.entries(), (e)=> toEntry(e[0], e[1]))};
   }
 
+  onItemDelete(item: PersonDTO) : void;
+  onItemDelete(item: RowDTO) : void;
+  onItemDelete(item: RowDTO | PersonDTO | any) : void {
+    if (item.letter && this.sheetServiceBD.deletePerson(item.id, this.sheetDto.id) ||
+        item.date && this.sheetServiceBD.deleteRow(item.id, this.sheetDto.id)) {
+      this.messageService.add({severity: 'info', summary: 'Eintrag wurde gel\u00f6scht.', detail: JSON.stringify(item)});
+      this.sheetDto = this.sheetServiceBD.read(0);
+      if (this.currentSort) this.customSort(this.currentSort);
+    }
+  }
+
   onRowEditSave(row: RowDTO) {
 
     let maxId = 0;
@@ -115,7 +154,6 @@ export class BalanceComponent implements OnInit {
     }
     console.log(row);
     if (row.amount != undefined && row.id != undefined) {
-      delete this.clonedProducts[row.id];
 
       let sheetId = 0;
       let bd = this.sheetServiceBD;
