@@ -45,13 +45,13 @@ export class SheetService {
     localStorage.setItem(SheetService.STORAGE_ID, JSON.stringify(dto))
   }
 
-  public saveRow(rowDto: RowDTO, sheetId : number) : number {
-    let ret: number = this.saveRowInt(rowDto, sheetId);
+  public saveRow(rowDto: RowDTO, sheetId : number, idx?: number) : number {
+    let ret: number = this.saveRowInt(rowDto, sheetId, idx);
     this.store();
     return ret;
   }
 
-  protected saveRowInt(rowDto: RowDTO, sheetId : number) : number {
+  protected saveRowInt(rowDto: RowDTO, sheetId : number, idx?: number) : number {
 
     let persResolver: (persDto: PersonDTO) => Person = (persDto) =>
       nvl(
@@ -65,6 +65,7 @@ export class SheetService {
     let row : Row = findFirst(this.sheet.rows, (r) => eq(r.id, rowDto.id));
 
     if (nsc(row)) {
+
       row.amount = rowDto.amount;
       row.date = rowDto.date;
       row.label = rowDto.label;
@@ -77,9 +78,18 @@ export class SheetService {
     } else {
 
       row = new Row(rowDto.id, rowDto.date, paidBy, paidFor,
-        rowDto.label, rowDto.category, rowDto.amount, this.sheet);
+      rowDto.label, rowDto.category, rowDto.amount, this.sheet);
 
-      this.sheet.rows.add(row)
+      if (idx && idx >= 0 && idx < count(this.sheet.rows)) {
+        console.log(Array.from(this.sheet.rows));
+        let arr = Array.from(this.sheet.rows);
+        arr.splice(idx, 0, row);
+        console.log(arr);
+        this.sheet.rows = new Set(arr);
+        console.log(this.sheet.rows);
+      } else {
+        this.sheet.rows.add(row)
+      }
     }
 
     row.calc();
@@ -122,10 +132,14 @@ export class SheetService {
   public deletePerson(personId: number, sheetId : number) : boolean {
 
     let ret : boolean = wth(findFirst(this.sheet.persons, (person) => person.id == personId), (person) =>
-
       this.sheet.persons.delete(person)
     );
-    this.store();
+
+    if (ret) {
+      forEach(this.sheet.rows, (row) => row.calc());
+      this.store();
+    }
+
     return ret;
   };
 

@@ -1,24 +1,22 @@
-
-import { SelectItem, SortEvent, MenuItem, MessageService } from 'primeng/api';;
+import { SelectItem, SortEvent, MenuItem, MessageService, ConfirmationService } from 'primeng/api';;
 import { ProductService } from './productservice';
 import { Product } from './product';
 import { Stream, NullSafe, Equality } from '../utils';
-import { PersonDTO, RowDTO, SheetDTO } from "common";
+import { PersonDTO, RowDTO, ColDTO, ResultDTO } from "common";
 import { SheetServiceBD } from './sheet.service.bd';
 import { Component, ViewChild } from '@angular/core';
 import { OnInit } from '@angular/core';
-import { ResultDTO } from '../../../../common/dist/balance/ResultDTO';
 import { Table } from 'primeng/table';
 
 const { findFirst, forEach, toMap, toEntry } = Stream;
-const { wth, nsc, emp } = NullSafe;
+const { wth, nsc, emp, nvl } = NullSafe;
 const { eq } = Equality;
 
 
 @Component({
   selector: 'app-balance',
   templateUrl: './balance.component.html',
-  providers: [MessageService, ProductService, SheetServiceBD ],
+  providers: [MessageService, ProductService, SheetServiceBD, ConfirmationService],
   styleUrls: ['./balance.component.css']
 })
 export class BalanceComponent implements OnInit {
@@ -29,7 +27,10 @@ export class BalanceComponent implements OnInit {
 
   currentSort? : SortEvent;
 
-  sheetDto!: SheetDTO;
+  sheetId!: number;
+  cols!: ColDTO[];
+  rows!: RowDTO[];
+  persons!: PersonDTO[];
 
   rowMenuItems: MenuItem[];
   personMenuItems: MenuItem[];
@@ -40,7 +41,7 @@ export class BalanceComponent implements OnInit {
   statuses: SelectItem[] = [];
 
   constructor(public productService: ProductService, private messageService: MessageService,
-    private sheetServiceBD : SheetServiceBD) { }
+    private sheetServiceBD : SheetServiceBD, private confirmationService: ConfirmationService) { }
 
   ngOnInit() {
     this.productService.getProductsSmall().then(data => this.products1 = data);
@@ -48,10 +49,12 @@ export class BalanceComponent implements OnInit {
 
     this.rowMenuItems = [
       {label: 'Kopiere', icon: 'pi pi-fw pi-copy', command: () => this.onRowCopy(this.selectedRow)},
+      {label: 'Bearbeite', icon: 'pi pi-fw pi-check', command: () => this.onRowEditInit(this.selectedRow)},
       {label: 'L\u00f6sche', icon: 'pi pi-fw pi-times', command: () => this.onItemDelete(this.selectedRow)}
     ];
 
     this.personMenuItems = [
+      {label: 'Bearbeite', icon: 'pi pi-fw pi-check', command: () => this.onPersonEditInit(this.selectedPerson)},
       {label: 'L\u00f6sche', icon: 'pi pi-fw pi-times', command: () => this.onItemDelete(this.selectedPerson)}
     ];
 
@@ -62,41 +65,39 @@ export class BalanceComponent implements OnInit {
     let sira : PersonDTO = { id: 3, name: "Sira", letter: "W" };
 
     let bd = this.sheetServiceBD;
-    let sheetId = 0;
 
-    this.sheetDto = this.sheetServiceBD.read(sheetId);
-    if (emp(this.sheetDto.rows)) {
+    this.readSheet();
+    if (emp(this.rows)) {
 
-      bd.savePerson(julia, sheetId);
-      bd.savePerson(sky, sheetId);
-      bd.savePerson(sira, sheetId);
+      bd.savePerson(julia, this.sheetId);
+      bd.savePerson(sky, this.sheetId);
+      bd.savePerson(sira, this.sheetId);
 
       bd.saveRow({ id: 1, date: new Date(), paidBy: sira, paidFor: [sky, julia],
-        label: "Spar", category: "Essen", amount: -10.40}, sheetId);
+        label: "Spar", category: "Essen", amount: -10.40}, this.sheetId);
 
       bd.saveRow({ id: 2, date: new Date(), paidBy: sira, paidFor: [sira, sky, julia],
-        label: "Spar", category: "Essen", amount: -5}, sheetId);
+        label: "Spar", category: "Essen", amount: -5}, this.sheetId);
 
       bd.saveRow({ id: 3, date: new Date(), paidBy: sky, paidFor: [sky, julia],
-        label: "Spar", category: "Essen", amount: -6}, sheetId);
+        label: "Spar", category: "Essen", amount: -6}, this.sheetId);
 
-      this.sheetDto = this.sheetServiceBD.read(sheetId);
-
+      this.readSheet();
     }
   }
 
   public get personsPlusA() : PersonDTO[]{
-    let ret : PersonDTO[] = Array.from(this.sheetDto.persons);
+    let ret : PersonDTO[] = Array.from(this.persons);
     ret.push({ id: -1, name: "Alle", letter: "A"});
     return ret;
   }
 
-  @ViewChild('dt', {static: false}) private docDataTable: Table;
-
+  @ViewChild('dt', {static: false}) private rowTable: Table;
+  @ViewChild('dt1', {static: false}) private personTable: Table;
 
   onRowCopy(row: RowDTO) {
     let copy : RowDTO = this.onRowNewInit(row);
-    let values : any[] = <any[]>this.docDataTable.value;
+    let values : any[] = <any[]>this.rowTable.value;
 
     let index = values.length;
 
@@ -108,84 +109,151 @@ export class BalanceComponent implements OnInit {
     }
 
     values.splice(index, 0, copy);
-    this.docDataTable.initRowEdit(copy);
+    this.rowTable.initRowEdit(copy);
+  }
+
+  onRowEditInit(row: RowDTO) {
+    this.rowTable.initRowEdit(row);
+  }
+
+  onPersonEditInit(person: PersonDTO) {
+    this.personTable.initRowEdit(person);
   }
 
   onRowNewInit(row: RowDTO): RowDTO {
-
     let lastRow: RowDTO = null;
 
-    forEach(this.sheetDto.rows, (r) => !nsc(lastRow) || r.id > lastRow.id, (r) => lastRow = r);
+    forEach(this.rows, (r) => !nsc(lastRow) || r.id > lastRow.id, (r) => lastRow = r);
+    let id = 0;
 
     if (!nsc(lastRow)) {
-      let results : Map<PersonDTO, ResultDTO> = toMap(this.sheetDto.persons,
+      let results : Map<PersonDTO, ResultDTO> = toMap(this.persons,
         (p) => toEntry(p, <ResultDTO> { target: p, part: "0", ratio: 0, due: 0 }));
       row = { id: 0, date: new Date(), paidBy: null, paidFor: new Array(0),
         results: results, label: "", category: "", amount: 0 };
+    } else {
+      id = lastRow.id;
     }
 
     if (!nsc(row)) {
       row = lastRow;
     }
 
-    return { id: lastRow.id + 1, date: row.date, paidBy: row.paidBy, paidFor: Array.from(row.paidFor),
+    return { id: id + 1, date: row.date, paidBy: row.paidBy, paidFor: Array.from(row.paidFor),
       label: row.label, category: row.category, amount: row.amount,
-      results: toMap(row.results?.entries(), (e)=> toEntry(e[0], e[1]))};
+      results: toMap(row.results?.entries(), (e)=> toEntry(e[0], {target: e[1].target, due: 0, ratio: 1, part: ""} ))};
+  }
+
+  onPersonNewInit(person: PersonDTO) : PersonDTO {
+
+    let lastPerson: PersonDTO = null;
+    forEach(this.persons,
+      (p) => !nsc(lastPerson) || p.id > lastPerson.id,
+      (p) => lastPerson = p
+    );
+
+    let id : number = 0;
+
+    if (nsc(lastPerson)) {
+      id = lastPerson.id;
+    }
+
+    return { id: id + 1, name: "", letter: ""};
   }
 
   onItemDelete(item: PersonDTO) : void;
   onItemDelete(item: RowDTO) : void;
   onItemDelete(item: RowDTO | PersonDTO | any) : void {
-    if (item.letter && this.sheetServiceBD.deletePerson(item.id, this.sheetDto.id) ||
-        item.date && this.sheetServiceBD.deleteRow(item.id, this.sheetDto.id)) {
-      this.messageService.add({severity: 'info', summary: 'Eintrag wurde gel\u00f6scht.', detail: JSON.stringify(item)});
-      this.sheetDto = this.sheetServiceBD.read(0);
-      if (this.currentSort) this.customSort(this.currentSort);
-    }
+    this.confirmationService.confirm({
+      message: 'Auswahl wirklich l\u00f6schen?',
+      header: 'L\u00f6schen',
+      icon: 'pi pi-exclamation-triangle',
+      accept: () => {
+        if (item.letter && this.sheetServiceBD.deletePerson(item.id, this.sheetId) ||
+            item.date && this.sheetServiceBD.deleteRow(item.id, this.sheetId)) {
+          this.messageService.add({severity: 'info', summary: 'Eintrag wurde gel\u00f6scht.', detail: JSON.stringify(item)});
+          this.readSheet();
+          if (this.currentSort) this.customSort(this.currentSort);
+        }
+      }
+    });
   }
 
-  onRowEditSave(row: RowDTO) {
+  readSheet(): void {
+    let sheetDto = this.sheetServiceBD.read(nvl(this.sheetId, 0));
+    this.sheetId = sheetDto.id;
+    this.persons = null;
+    this.persons = sheetDto.persons;
+    this.rows = sheetDto.rows;
+    this.cols = sheetDto.cols;
 
-    let maxId = 0;
-    forEach(this.sheetDto.rows, (r) => r.id > maxId, (r) => maxId = r.id);
+    /**
+     *
+    id: string;
+    label: string;
+    footer: any;
+    sorter: (row1: RowDTO, row2: RowDTO) => number;
+    editable?: boolean;
+    type?: ColType;
+    delegate: AccessorDelegate<RowDTO, any, any>;
+     */
+  }
 
-    if (row.id == undefined) {
-      row.id = ++maxId;
+
+  onItemEditSave(item: PersonDTO, idx: number) : void;
+  onItemEditSave(item: RowDTO, idx: number) : void;
+  onItemEditSave(item: RowDTO | PersonDTO | any, idx: number) : void {
+
+    let bd = this.sheetServiceBD;
+
+    if (item.letter) {
+
+      let person: PersonDTO = item;
+
+      bd.savePerson(person, this.sheetId);
+
+      this.messageService.add({severity:'success', summary: 'Erfolg', detail:'Person wurde gespeichert!'});
+
+    } else if (item.date) {
+
+      let row: RowDTO = item;
+      let maxId = 0;
+      forEach(this.rows, (r) => r.id > maxId, (r) => maxId = r.id);
+
+      if (row.id == undefined) {
+        row.id = ++maxId;
+      }
+
+      if (row.amount != undefined && row.id != undefined) {
+
+        bd.saveRow(row, this.sheetId, idx);
+
+        this.messageService.add({severity:'success', summary: 'Erfolg', detail:'Daten wurden gespeichert!'});
+      }
+      else {
+          this.messageService.add({severity:'error', summary: 'Fehler', detail:'Flasche ID'});
+      }
+
     }
-    console.log(row);
-    if (row.amount != undefined && row.id != undefined) {
 
-      let sheetId = 0;
-      let bd = this.sheetServiceBD;
-
-      bd.saveRow(row, sheetId);
-
-      this.messageService.add({severity:'success', summary: 'Success', detail:'Row is updated'});
-    }
-    else {
-        this.messageService.add({severity:'error', summary: 'Error', detail:'Invalid id'});
-    }
-    this.sheetDto = this.sheetServiceBD.read(0);
+    this.readSheet();
     if (this.currentSort) this.customSort(this.currentSort);
 }
 
-onRowEditCancel(row: RowDTO, index: number) {
-  this.sheetDto = this.sheetServiceBD.read(0);
-}
-  newRow() {
-    return { id: this.productService.getNextId() + "", code: 'asf', name: 'asf', inventoryStatus: 'INSTOCK', price: '0.3' };
+  onItemEditCancel(item: any, index: number) {
+    this.readSheet();
   }
 
   customSort(event: SortEvent) {
 
-    let rows: RowDTO[] = this.sheetDto.rows;
+    let rows: RowDTO[] = this.rows;
     this.currentSort = event;
 
     rows.sort((data1, data2) => {
       let result = 0;
 
       if (event.data != null) {
-        wth(findFirst(this.sheetDto.cols, (c) => eq(c.id, event.field)), (col) => {
+        wth(findFirst(this.cols, (c) => eq(c.id, event.field)), (col) => {
           result = col.sorter(data1, data2);
         });
       }
@@ -193,6 +261,6 @@ onRowEditCancel(row: RowDTO, index: number) {
       return result * wth(event, 1, (e) => e.order);
     });
 
-    event.data = this.sheetDto.rows
+    event.data = this.rows
   }
 }

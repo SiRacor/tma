@@ -12,7 +12,7 @@ import { AppComponent } from './app.component';
 import { BalanceComponent } from './balance/balance.component';
 import { RadarComponent } from './radar/radar.component';
 import { TabMenuModule } from 'primeng/tabmenu';
-import {RouterModule} from '@angular/router';
+import { RouterModule } from '@angular/router';
 
 import {FormsModule} from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
@@ -30,6 +30,8 @@ import {DropdownModule} from 'primeng/dropdown';
 import {ProgressBarModule} from 'primeng/progressbar';
 import {InputTextModule} from 'primeng/inputtext';
 import {CardModule} from 'primeng/card';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { ConfirmationService } from 'primeng/api';
 
 import { AddRowDirective } from './balance/add-row.directive';
 
@@ -60,9 +62,10 @@ import { AddRowDirective } from './balance/add-row.directive';
     FormsModule,
     TabMenuModule,
     RouterModule,
-    CardModule
+    CardModule,
+    ConfirmDialogModule
   ],
-  providers: [ProductService, SheetService, SheetServiceBD, SheetDAO],
+  providers: [ProductService, SheetService, SheetServiceBD, SheetDAO, ConfirmationService],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

@@ -14,8 +14,8 @@ export class SheetServiceBD {
     this.sheetService = new SheetService();
   }
 
-  public saveRow(row: RowDTO, sheetId : number) : number {
-    return this.sheetService.saveRow(row, sheetId);
+  public saveRow(row: RowDTO, sheetId : number, idx?: number) : number {
+    return this.sheetService.saveRow(row, sheetId, idx);
   };
 
   public deleteRow(rowId: number, sheetId : number) : boolean {

@@ -1,35 +1,68 @@
-<p>balance works!</p>
-https://stackblitz.com/edit/primeng-table-addnewrow?file=src%2Fapp%2Fadd-row.directive.ts
-
 <p-toast></p-toast>
 
 <p-contextMenu #personMenu [model]="personMenuItems"></p-contextMenu>
 
 <p-card header="Personen">
-  <p-table #dt1 [value]="sheetDto.persons" [(contextMenuSelection)]="selectedPerson" [contextMenu]="personMenu" styleClass="p-datatable-sm"  dataKey="id" [style]="{width:'200px'}">
+  <p-table #dt1 [value]="persons" [(contextMenuSelection)]="selectedPerson" [contextMenu]="personMenu" styleClass="p-datatable-sm" editMode="row" dataKey="id" [style]="{width:'250px'}">
     <ng-template pTemplate="header" let-columns>
         <tr>
           <th>Name</th>
           <th>Kürzel</th>
+          <th></th>
         </tr>
     </ng-template>
-    <ng-template pTemplate="body" let-rowData>
-        <tr [pContextMenuRow]="rowData">
-          <td>
-            {{rowData.name}}
+    <ng-template pTemplate="body" let-editing="editing" let-rowData let-ri="rowIndex">
+        <tr [pEditableRow]="rowData" [pContextMenuRow]="rowData">
+          <td style="width:80px">
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="text" [(ngModel)]="rowData.name"
+                style="width:60px; margin-left:-0.5rem; margin-top:-0.5rem; margin-top:-0.5rem; margin-bottom:-0.5rem">
+              </ng-template>
+
+              <ng-template pTemplate="output">
+                {{rowData.name}}
+              </ng-template>
+            </p-cellEditor>
           </td>
           <td>
-            {{rowData.letter}}
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="text" [(ngModel)]="rowData.letter"
+                style="width:30px; margin-left:-0.5rem; margin-top:-0.5rem; margin-top:-0.5rem; margin-bottom:-0.5rem">
+              </ng-template>
+
+              <ng-template pTemplate="output">
+                {{rowData.letter}}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td style="text-align:center">
+              <button *ngIf="!editing" pButton pRipple type="button" pInitEditableRow icon="pi pi-pencil" class="p-button-rounded p-button-text"></button>
+              <button *ngIf="!editing" pButton pRipple type="button" (click)="onItemDelete(rowData)" icon="pi pi-times" class="p-button-rounded p-button-text"></button>
+              <button *ngIf="editing" pButton pRipple type="button" pSaveEditableRow icon="pi pi-check" (click)="onItemEditSave(rowData, ri)" class="p-button-rounded p-button-text p-button-success mr-2"></button>
+              <button *ngIf="editing" pButton pRipple type="button" pCancelEditableRow icon="pi pi-times" (click)="onItemEditCancel(rowData, ri)" class="p-button-rounded p-button-text p-button-danger"></button>
           </td>
         </tr>
     </ng-template>
+    <ng-template pTemplate="footer" let-columns>
+      <tr>
+        <td></td>
+        <td></td>
+        <td style="text-align:center">
+          <button pButton type="button"icon="pi pi-plus" class="p-button-rounded p-button-text" [label]=""
+          pAddRow [table]="dt1" [newRow]="onPersonNewInit(null)" style="margin-top:-0.5rem; margin-bottom:-0.5rem"></button>
+        </td>
+      </tr>
+    </ng-template>
+
   </p-table>
 </p-card>
 
 <p-contextMenu #rowMenu [model]="rowMenuItems"></p-contextMenu>
 
 <p-card header="Daten">
-  <p-table #dt [value]="sheetDto.rows" [(contextMenuSelection)]="selectedRow" [contextMenu]="rowMenu" styleClass="p-datatable-sm" [columns]="sheetDto.cols" dataKey="id" editMode="row" (sortFunction)="customSort($event)" [customSort]="true">
+  <p-table #dt [value]="rows" [(contextMenuSelection)]="selectedRow" [contextMenu]="rowMenu" styleClass="p-datatable-sm" [columns]="cols" dataKey="id" editMode="row" (sortFunction)="customSort($event)" [customSort]="true" [style]="{width:'1200px'}">
     <ng-template pTemplate="header" let-columns>
         <tr>
           <ng-container *ngFor="let col of columns" [ngSwitch]="true">
@@ -40,6 +73,7 @@ https://stackblitz.com/edit/primeng-table-addnewrow?file=src%2Fapp%2Fadd-row.dir
               {{col.label}}
             </th>
           </ng-container>
+        <th></th>
         </tr>
     </ng-template>
     <ng-template pTemplate="body" let-rowData let-columns="columns" let-editing="editing" let-ri="rowIndex">
@@ -57,7 +91,7 @@ https://stackblitz.com/edit/primeng-table-addnewrow?file=src%2Fapp%2Fadd-row.dir
                       placeholder="Select"
                       style="width:100px; margin-left:-0.5rem; margin-top:-0.5rem; margin-top:-0.5rem; margin-bottom:-0.5rem">
                   </p-calendar>
-                  <p-dropdown *ngSwitchCase="col.type=='person'" [options]="sheetDto.persons" optionLabel="letter" appendTo="body" [(ngModel)]="col.delegate.var(rowData).value"
+                  <p-dropdown *ngSwitchCase="col.type=='person'" [options]="persons" optionLabel="letter" appendTo="body" [(ngModel)]="col.delegate.var(rowData).value"
                   style="width:100px; margin-left:-0.5rem; margin-top:-0.5rem; margin-top:-0.5rem; margin-bottom:-0.5rem"></p-dropdown>
                   <p-multiSelect *ngSwitchCase="col.type=='persons'" [options]="personsPlusA" optionLabel="letter" [filter]="false" [showToggleAll]="false" [showHeader]="false" appendTo="body" [(ngModel)]="col.delegate.var(rowData).value"
                   style="width:100px; margin-left:-0.5rem; margin-top:-0.5rem; margin-top:-0.5rem; margin-bottom:-0.5rem">
@@ -106,18 +140,22 @@ https://stackblitz.com/edit/primeng-table-addnewrow?file=src%2Fapp%2Fadd-row.dir
           </ng-container>
           <td style="text-align:center">
               <button *ngIf="!editing" pButton pRipple type="button" pInitEditableRow icon="pi pi-pencil" class="p-button-rounded p-button-text"></button>
-              <button *ngIf="!editing" pButton pRipple type="button" pAddRow icon="pi pi-copy" [table]="dt" [belowOf]="ri" [newRow]="onRowNewInit(rowData)" class="p-button-rounded p-button-text"></button>
-              <button *ngIf="editing" pButton pRipple type="button" pSaveEditableRow icon="pi pi-check" (click)="onRowEditSave(rowData)" class="p-button-rounded p-button-text p-button-success mr-2"></button>
-              <button *ngIf="editing" pButton pRipple type="button" pCancelEditableRow icon="pi pi-times" (click)="onRowEditCancel(rowData, ri)" class="p-button-rounded p-button-text p-button-danger"></button>
+              <button *ngIf="!editing" pButton pRipple type="button" (click)="onItemDelete(rowData)" icon="pi pi-times" class="p-button-rounded p-button-text"></button>
+              <button *ngIf="editing" pButton pRipple type="button" pSaveEditableRow icon="pi pi-check" (click)="onItemEditSave(rowData, ri)" class="p-button-rounded p-button-text p-button-success mr-2"></button>
+              <button *ngIf="editing" pButton pRipple type="button" pCancelEditableRow icon="pi pi-times" (click)="onItemEditCancel(rowData, ri)" class="p-button-rounded p-button-text p-button-danger"></button>
           </td>
         </tr>
     </ng-template>
     <ng-template pTemplate="footer" let-columns>
       <tr>
-	  <ng-container *ngFor="let col of columns" [ngSwitch]="true">
-        <td class="rightClass" *ngSwitchCase="col.type=='number'">{{col.footer | number: '1.2-2'}}</td>
-        <td *ngSwitchDefault>{{col.footer}}</td>
-	  </ng-container>
+      <ng-container *ngFor="let col of columns" [ngSwitch]="true">
+          <td class="rightClass" *ngSwitchCase="col.type=='number'">{{col.footer | number: '1.2-2'}}</td>
+          <td *ngSwitchDefault>{{col.footer}}</td>
+      </ng-container>
+      <td style="text-align:center">
+        <button pButton type="button"icon="pi pi-plus" class="p-button-rounded p-button-text" [label]=""
+        pAddRow [table]="dt" [newRow]="onRowNewInit(null)" style="margin-top:-0.5rem; margin-bottom:-0.5rem"></button>
+      </td>
 	   </tr>
     </ng-template>
   </p-table>
@@ -125,8 +163,7 @@ https://stackblitz.com/edit/primeng-table-addnewrow?file=src%2Fapp%2Fadd-row.dir
 
 <br/>
 
-<button pButton type="button"icon="pi pi-plus" class="ui-button-info" [label]="'Add'"
-pAddRow [table]="dt" [newRow]="onRowNewInit(null)"></button>
+<p-confirmDialog [acceptLabel]="'Ja'" [rejectLabel]="'Nein'" [style]="{width: '450px'}"></p-confirmDialog>
 
 
 <!--div class="card">
