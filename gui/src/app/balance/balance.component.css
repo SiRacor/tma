@@ -10,6 +10,14 @@
   padding-right: 40px;
 }
 
+::ng-deep .p-datatable-sm .p-datatable-tbody > tr > td > p-celleditor.p-element
+{
+  width:90px;
+  margin-left:-0.5rem;
+  margin-top:-0.5rem;
+  margin-bottom:-0.5rem
+}
+
 .calendar input {
   width: 50px !important
 }

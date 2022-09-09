@@ -3,6 +3,7 @@ import { ColDTO, ColType, PersonDTO, RowDTO, SheetDTO } from "common";
 import { NullSafe, Stream, Equality } from '../utils';
 import { Person, Row, Sheet } from './sheet';
 import { AccessorDelegate } from 'utils';
+import { DatePipe } from "@angular/common";
 const { nsc, nvl, wth } = NullSafe;
 const { eq } = Equality;
 const { forEach, findFirst, toArray, toMap, toEntry, count } = Stream;
@@ -66,8 +67,8 @@ export class SheetService {
 
     if (nsc(row)) {
 
-      row.amount = rowDto.amount;
-      row.date = rowDto.date;
+      row.amount = new Number(nvl(rowDto.amount, 0)).valueOf();
+      row.date = new Date(rowDto.date);
       row.label = rowDto.label;
       row.category = rowDto.category;
       row.paidBy = rowDto.paidBy;
@@ -77,8 +78,8 @@ export class SheetService {
 
     } else {
 
-      row = new Row(rowDto.id, rowDto.date, paidBy, paidFor,
-      rowDto.label, rowDto.category, rowDto.amount, this.sheet);
+      row = new Row(rowDto.id, new Date(rowDto.date), paidBy, paidFor,
+      rowDto.label, rowDto.category, new Number(nvl(rowDto.amount, 0)).valueOf(), this.sheet);
 
       if (idx && idx >= 0 && idx < count(this.sheet.rows)) {
         console.log(Array.from(this.sheet.rows));
@@ -213,7 +214,7 @@ export class SheetService {
       id: idGen(),
       label: 'Datum',
       footer: '',
-      sorter: nbSort((row: RowDTO) => row.date.getDate()),
+      sorter: nbSort((row: RowDTO) => row.date.getTime()),
       type: ColType.date,
       editable: true,
       delegate: new AccessorDelegate(

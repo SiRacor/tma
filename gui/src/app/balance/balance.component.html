@@ -88,16 +88,13 @@
                       [(ngModel)]="col.delegate.var(rowData).value"
                       appendTo="body"
                       dateFormat="{{'dd.mm.yy'}}"
-                      placeholder="Select"
-                      style="width:100px; margin-left:-0.5rem; margin-top:-0.5rem; margin-top:-0.5rem; margin-bottom:-0.5rem">
+                      placeholder="{{col.delegate.var(rowData).value | date: 'dd.MM.yyyy'}}">
                   </p-calendar>
                   <p-dropdown *ngSwitchCase="col.type=='person'" [options]="persons" optionLabel="letter" appendTo="body" [(ngModel)]="col.delegate.var(rowData).value"
-                  style="width:100px; margin-left:-0.5rem; margin-top:-0.5rem; margin-top:-0.5rem; margin-bottom:-0.5rem"></p-dropdown>
-                  <p-multiSelect *ngSwitchCase="col.type=='persons'" [options]="personsPlusA" optionLabel="letter" [filter]="false" [showToggleAll]="false" [showHeader]="false" appendTo="body" [(ngModel)]="col.delegate.var(rowData).value"
-                  style="width:100px; margin-left:-0.5rem; margin-top:-0.5rem; margin-top:-0.5rem; margin-bottom:-0.5rem">
+                  ></p-dropdown>
+                  <p-multiSelect *ngSwitchCase="col.type=='persons'" [options]="personsPlusA" optionLabel="letter" [filter]="false" [showToggleAll]="false" [showHeader]="false" appendTo="body" [(ngModel)]="col.delegate.var(rowData).value">
                   </p-multiSelect>
-                  <input *ngSwitchDefault style="width: 80px" pInputText type="text" [(ngModel)]="col.delegate.var(rowData).value"
-                  style="width:100px; margin-left:-0.5rem; margin-top:-0.5rem; margin-top:-0.5rem; margin-bottom:-0.5rem">
+                  <input *ngSwitchDefault style="width: 80px" pInputText type="text" [(ngModel)]="col.delegate.var(rowData).value">
                   </ng-template>
 
                 <ng-template pTemplate="output"[ngSwitch]="true">
@@ -164,71 +161,3 @@
 <br/>
 
 <p-confirmDialog [acceptLabel]="'Ja'" [rejectLabel]="'Nein'" [style]="{width: '450px'}"></p-confirmDialog>
-
-
-<!--div class="card">
-  <h5>Row Editing</h5>
-      <p-table #dt [value]="products2" dataKey="id" editMode="row">
-          <ng-template pTemplate="header">
-              <tr>
-                  <th>Code</th>
-                  <th>Name</th>
-                  <th>Category</th>
-                  <th>Quantity</th>
-                  <th style="width:8rem"></th>
-              </tr>
-          </ng-template>
-          <ng-template pTemplate="body" let-product let-c let-editing="editing" let-ri="rowIndex">
-              <tr [pEditableRow]="product">
-                  <td pEditableColumn>
-                      <p-cellEditor>
-                          <ng-template pTemplate="input">
-                              <input pInputText type="text" [(ngModel)]="product.code">
-                          </ng-template>
-                          <ng-template pTemplate="output">
-                              {{product.code}}
-                          </ng-template>
-                      </p-cellEditor>
-                  </td>
-                  <td pEditableColumn>
-                      <p-cellEditor>
-                          <ng-template pTemplate="input">
-                              <input pInputText type="text" [(ngModel)]="product.name" required>
-                          </ng-template>
-                          <ng-template pTemplate="output">
-                              {{product.name}}
-                          </ng-template>
-                      </p-cellEditor>
-                  </td>
-                  <td pEditableColumn>
-                      <p-cellEditor>
-                          <ng-template pTemplate="input">
-                              <p-dropdown [options]="statuses" [(ngModel)]="product.inventoryStatus" [style]="{'width':'100%'}"></p-dropdown>
-                          </ng-template>
-                          <ng-template pTemplate="output">
-                              {{product.inventoryStatus}}
-                          </ng-template>
-                      </p-cellEditor>
-                  </td>
-                  <td pEditableColumn>
-                      <p-cellEditor>
-                          <ng-template pTemplate="input">
-                              <input pInputText type="text" [(ngModel)]="product.price">
-                          </ng-template>
-                          <ng-template pTemplate="output">
-                              {{product.price | currency: 'USD'}}
-                          </ng-template>
-                      </p-cellEditor>
-                  </td>
-                  <td style="text-align:center">
-                      <button *ngIf="!editing" pButton pRipple type="button" pInitEditableRow icon="pi pi-plus" (click)="onRowEditInit(product)" class="p-button-rounded p-button-text"></button>
-                      <button *ngIf="editing" pButton pRipple type="button" pSaveEditableRow icon="pi pi-check" (click)="onRowEditSave(product)" class="p-button-rounded p-button-text p-button-success p-mr-2"></button>
-                      <button *ngIf="editing" pButton pRipple type="button" pCancelEditableRow icon="pi pi-times" (click)="onRowEditCancel(product, ri)" class="p-button-rounded p-button-text p-button-danger"></button>
-                  </td>
-              </tr>
-          </ng-template>
-      </p-table>
-  </!div-->
-
-<!--button pButton type="button"icon="pi pi-plus" class="ui-button-info" [label]="'Add'"
-pAddRow [table]="dt" [newRow]="newRow()"></!--button-->
