@@ -1,7 +1,7 @@
 import { SelectItem, SortEvent, MenuItem, MessageService, ConfirmationService } from 'primeng/api';;
 import { ProductService } from './productservice';
 import { Product } from './product';
-import { Stream, NullSafe, Equality } from '../utils';
+import { Stream, NullSafe, Equality } from "utils";
 import { PersonDTO, RowDTO, ColDTO, ResultDTO } from "common";
 import { SheetServiceBD } from './sheet.service.bd';
 import { Component, ViewChild } from '@angular/core';

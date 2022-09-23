@@ -7,18 +7,23 @@
   "files": [
     "/dist"
   ],
+  "baseUrl": ".",
+  "paths": {
+    "common": ["dist"]
+  },
   "scripts": {
     "build": "tsc",
-    "link": "npm link ../../utils",
     "test": "npx jasmine"
   },
   "author": "SiRacor",
   "license": "ISC",
   "private": true,
+  "dependencies": {
+    "utils": "../../utils"
+  },
   "devDependencies": {
     "@types/jasmine": "~4.0.0",
     "jasmine": "^4.3.0",
-    "ts-node": "^10.9.1",
-    "typescript": "^4.8.2"
+    "ts-node": "^10.9.1"
   }
 }

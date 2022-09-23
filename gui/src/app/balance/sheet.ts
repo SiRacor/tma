@@ -1,5 +1,4 @@
-import { Equality, NullSafe, Stream } from '../utils';
-import { sayHello } from 'utils';
+import { Equality, NullSafe, Stream } from "utils";
 
 const { eq } = Equality;
 const { nsc, nvl, nvle, wth } = NullSafe;
@@ -10,7 +9,7 @@ export class Sheet {
   constructor(public id : number  = 0, public persons : Set<Person> = new Set(), public rows : Set<Row> = new Set()) {
     this.id = id;
     this.persons = persons;
-    this.rows = rows;sayHello();
+    this.rows = rows;
   }
 }
 

@@ -1,4 +1,4 @@
-import { Equality, NullSafe, Stream } from './utils';
+import { Equality, NullSafe, Stream } from "utils";
 const { nsc } = NullSafe;
 
  export class Assert {

@@ -1,9 +1,7 @@
 import { Injectable } from "@angular/core";
+import { NullSafe, Stream, Equality, AccessorDelegate } from "utils";
 import { ColDTO, ColType, PersonDTO, RowDTO, SheetDTO } from "common";
-import { NullSafe, Stream, Equality } from '../utils';
 import { Person, Row, Sheet } from './sheet';
-import { AccessorDelegate } from 'utils';
-import { DatePipe } from "@angular/common";
 const { nsc, nvl, wth } = NullSafe;
 const { eq } = Equality;
 const { forEach, findFirst, toArray, toMap, toEntry, count } = Stream;
@@ -114,12 +112,12 @@ export class SheetService {
   protected savePersonInt(personDto: PersonDTO, sheetId : number) : number {
 
     let person : Person | null =
-      findFirst(this.sheet.persons, (pers) => pers.name == personDto.name);
+      findFirst(this.sheet.persons, (pers) => pers.id == personDto.id);
 
     if (nsc(person)) {
 
       person.name = personDto.name;
-      person.id = personDto.id;
+      person.letter = personDto.letter;
 
     } else {
 

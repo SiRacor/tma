@@ -1,5 +1,5 @@
 import { RowDTO } from "./RowDTO";
-import { AccessorDelegate } from 'utils';
+import { AccessorDelegate } from "utils";
 import { ColType } from "./ColType";
 
 export interface ColDTO {

@@ -11,7 +11,6 @@
     "build": "ng build --base-href .",
     "watch": "ng build --watch --configuration development",
     "test": "ng test --code-coverage",
-    "link": "npm link ../../utils ../common",
     "electron": "copy /Y src\\electron\\* dist\\ && electron .\\dist\\",
     "build & electron": "npm run build && npm run electron",
     "package-win": "electron-packager .\\dist\\ TMA  --icon=favicon.ico --overwrite --asar --platform=win32 --arch=ia32  --prune=true --out=../package --version-string.CompanyName=SiRacor --version-string.FileDescription=SiRacor --version-string.ProductName=\"TMA\""
@@ -27,6 +26,8 @@
     "@angular/platform-browser-dynamic": "^14.1.0",
     "@angular/router": "^14.1.0",
     "@types/jasmine": "~4.0.0",
+    "utils": "file:../../utils/dist",
+    "common": "file:../common",
     "ngx-papaparse": "^5.1.0",
     "primeicons": "^5.0.0",
     "primeng": "^14.0.0"

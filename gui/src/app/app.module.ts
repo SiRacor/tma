@@ -1,7 +1,6 @@
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 
-
 import { ProductService } from './balance/productservice';
 import { SheetDAO } from './balance/sheetdao';
 import { SheetService } from './balance/sheet.service';

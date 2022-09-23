@@ -1,6 +1,6 @@
 import { Directive, Input, HostListener } from '@angular/core';
 import { Table } from 'primeng/table';
-import { NullSafe } from '../utils';
+import { NullSafe } from "utils";
 const { nsc } = NullSafe;
 
 
