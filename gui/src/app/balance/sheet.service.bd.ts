@@ -22,8 +22,8 @@ export class SheetServiceBD {
     return this.sheetService.deleteRow(rowId, sheetId);
   };
 
-  public savePerson(person: PersonDTO, sheetId : number) : number {
-    return this.sheetService.savePerson(person, sheetId);
+  public savePerson(person: PersonDTO, sheetId : number, idx?: number) : number {
+    return this.sheetService.savePerson(person, sheetId, idx);
   };
 
   public deletePerson(personId: number, sheetId : number) : boolean {

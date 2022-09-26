@@ -4,11 +4,17 @@ import { Product } from './product';
 import { Stream, NullSafe, Equality } from "utils";
 import { PersonDTO, RowDTO, ColDTO, ResultDTO } from "common";
 import { SheetServiceBD } from './sheet.service.bd';
-import { Component, ViewChild } from '@angular/core';
+import { Component, EventEmitter, ViewChild } from '@angular/core';
 import { OnInit } from '@angular/core';
-import { Table } from 'primeng/table';
+import { RowToggler, Table } from 'primeng/table';
+import * as FileSaver from 'file-saver';
+import { formatDate } from '@angular/common';
+import { Papa, UnparseConfig } from 'ngx-papaparse';
+import { registerLocaleData } from '@angular/common';
+import localeDe from '@angular/common/locales/de';
+import localeDeExtra from '@angular/common/locales/extra/de';
 
-const { findFirst, forEach, toMap, toEntry } = Stream;
+const { findFirst, forEach, toMap, toEntry, toArray } = Stream;
 const { wth, nsc, emp, nvl } = NullSafe;
 const { eq } = Equality;
 
@@ -84,6 +90,8 @@ export class BalanceComponent implements OnInit {
 
       this.readSheet();
     }
+
+    registerLocaleData(localeDe, 'de-DE', localeDeExtra);
   }
 
   public get personsPlusA() : PersonDTO[]{
@@ -161,22 +169,45 @@ export class BalanceComponent implements OnInit {
     return { id: id + 1, name: "", letter: ""};
   }
 
+  onRowReorder(event: { dragIndex: number; dropIndex: number }) {
+
+    if (!nsc(event) || eq(event.dragIndex, event.dropIndex))
+    return;
+
+    let a = this.persons[event.dropIndex];
+    let idx = event.dropIndex;
+    this.messageService.add({severity: 'warn', detail: JSON.stringify(event) + JSON.stringify(a)});
+
+    this.sheetServiceBD.savePerson(a, this.sheetId, idx);
+
+    this.readSheet();
+  }
+
   onItemDelete(item: PersonDTO) : void;
+  onItemDelete(item: PersonDTO, confirmed: boolean) : void;
   onItemDelete(item: RowDTO) : void;
-  onItemDelete(item: RowDTO | PersonDTO | any) : void {
-    this.confirmationService.confirm({
-      message: 'Auswahl wirklich l\u00f6schen?',
-      header: 'L\u00f6schen',
-      icon: 'pi pi-exclamation-triangle',
-      accept: () => {
-        if (item.letter && this.sheetServiceBD.deletePerson(item.id, this.sheetId) ||
-            item.date && this.sheetServiceBD.deleteRow(item.id, this.sheetId)) {
-          this.messageService.add({severity: 'info', summary: 'Eintrag wurde gel\u00f6scht.', detail: JSON.stringify(item)});
-          this.readSheet();
-          if (this.currentSort) this.customSort(this.currentSort);
-        }
+  onItemDelete(item: RowDTO, confirmed: boolean) : void;
+  onItemDelete(item: RowDTO | PersonDTO | any, confirmed?: boolean) : void {
+
+    const accept = () => {
+      if (item.letter && this.sheetServiceBD.deletePerson(item.id, this.sheetId) ||
+          item.date && this.sheetServiceBD.deleteRow(item.id, this.sheetId)) {
+        this.messageService.add({severity: 'info', summary: 'Eintrag wurde gel\u00f6scht.', detail: JSON.stringify(item)});
+        this.readSheet();
+        if (this.currentSort) this.customSort(this.currentSort);
       }
-    });
+    }
+
+    if (confirmed) {
+      accept();
+    } else {
+      this.confirmationService.confirm({
+        message: 'Auswahl wirklich l\u00f6schen?',
+        header: 'L\u00f6schen',
+        icon: 'pi pi-exclamation-triangle',
+        accept: accept
+      });
+    }
   }
 
   readSheet(): void {
@@ -262,5 +293,45 @@ export class BalanceComponent implements OnInit {
     });
 
     event.data = this.rows
+  }
+
+  saveToFile(): void {
+
+      let lines: Object[][] = [];
+
+      const papa = new Papa();
+      const conf : UnparseConfig = {
+        delimiter: ";",
+        quoteChar: '"',
+        quotes: true,
+        header: false
+      };
+
+      lines = lines.concat(toArray(this.persons,
+        (p) => ["PE", p.name, p.letter]
+      ));
+
+      const rowToData = (r: RowDTO) => {
+
+        let data = ["VR", formatDate(r.date, 'dd.MM.yyyy', "de-DE"), r.paidBy.letter,
+           toArray(r.paidFor, (pf) => pf.letter).join(""), r.amount, r.label, r.category]
+
+        forEach(this.persons,
+          (p) => data = data.concat(wth(r.results.get(p), ["", ""], (rs) => [rs.part, rs.due]))
+        )
+
+        return data;
+      }
+
+      lines = lines.concat(toArray(this.rows,
+        (row) => rowToData(row)
+      ));
+
+      const blob = new Blob([papa.unparse(lines, conf)], {
+        type: "text/plain;charset=utf-8"
+      });
+
+      FileSaver.saveAs(blob, 'data' + '_export_'
+        + formatDate(Date.now(),'yyyyMMdd_HHmmss', "de-DE") + ".csv");
   }
 }

@@ -5,6 +5,7 @@
     {
       "type": "npm",
       "script": "start",
+      "path": "gui/",
       "isBackground": true,
       "problemMatcher": {
         "owner": "typescript",

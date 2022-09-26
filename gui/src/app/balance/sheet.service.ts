@@ -3,7 +3,7 @@ import { NullSafe, Stream, Equality, AccessorDelegate } from "utils";
 import { ColDTO, ColType, PersonDTO, RowDTO, SheetDTO } from "common";
 import { Person, Row, Sheet } from './sheet';
 const { nsc, nvl, wth } = NullSafe;
-const { eq } = Equality;
+const { eq, neq } = Equality;
 const { forEach, findFirst, toArray, toMap, toEntry, count } = Stream;
 
 @Injectable()
@@ -80,13 +80,14 @@ export class SheetService {
       rowDto.label, rowDto.category, new Number(nvl(rowDto.amount, 0)).valueOf(), this.sheet);
 
       if (idx && idx >= 0 && idx < count(this.sheet.rows)) {
-        console.log(Array.from(this.sheet.rows));
+
         let arr = Array.from(this.sheet.rows);
         arr.splice(idx, 0, row);
-        console.log(arr);
+
         this.sheet.rows = new Set(arr);
-        console.log(this.sheet.rows);
+
       } else {
+
         this.sheet.rows.add(row)
       }
     }
@@ -103,27 +104,50 @@ export class SheetService {
     return ret;
   };
 
-  public savePerson(personDto: PersonDTO, sheetId : number) : number {
-    let ret: number = this.savePersonInt(personDto, sheetId);
+  public savePerson(personDto: PersonDTO, sheetId : number, idx?: number) : number {
+
+    console.log(idx);
+    let ret: number = this.savePersonInt(personDto, sheetId, idx);
     this.store();
     return ret;
   }
 
-  protected savePersonInt(personDto: PersonDTO, sheetId : number) : number {
+  protected savePersonInt(personDto: PersonDTO, sheetId: number, idx?: number) : number {
 
     let person : Person | null =
       findFirst(this.sheet.persons, (pers) => pers.id == personDto.id);
 
     if (nsc(person)) {
 
+      console.log(idx);
       person.name = personDto.name;
       person.letter = personDto.letter;
 
+      if (nsc(idx) && idx >= 0 && idx < count(this.sheet.persons)) {
+
+        let arr = toArray(this.sheet.persons, (p) => neq(p.id, person.id),(p) => p);
+
+        console.log(arr);
+        arr.splice(idx, 0, person);
+
+        console.log(arr);
+        this.sheet.persons = new Set(arr);
+      }
+
     } else {
 
+      console.log(idx);
       person = new Person(personDto.id, personDto.name, personDto.letter);
-      this.sheet.persons.add(person);
 
+      if (idx && idx >= 0 && idx < count(this.sheet.persons)) {
+        let arr = Array.from(this.sheet.persons);
+        arr.splice(idx, 0, person);
+
+        this.sheet.persons = new Set(arr);
+
+      } else {
+        this.sheet.persons.add(person);
+      }
     }
     return person.id;
   };
