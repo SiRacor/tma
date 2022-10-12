@@ -1,22 +1,22 @@
 import { SelectItem, SortEvent, MenuItem, MessageService, ConfirmationService } from 'primeng/api';;
 import { ProductService } from './productservice';
 import { Product } from './product';
-import { Stream, NullSafe, Equality } from "utils";
+import { Stream, NullSafe, Equality, DateTime } from 'utils'
 import { PersonDTO, RowDTO, ColDTO, ResultDTO } from "common";
 import { SheetServiceBD } from './sheet.service.bd';
 import { Component, EventEmitter, ViewChild } from '@angular/core';
 import { OnInit } from '@angular/core';
 import { RowToggler, Table } from 'primeng/table';
 import * as FileSaver from 'file-saver';
-import { formatDate } from '@angular/common';
-import { Papa, UnparseConfig } from 'ngx-papaparse';
+import { Papa, ParseConfig, UnparseConfig } from 'ngx-papaparse';
 import { registerLocaleData } from '@angular/common';
 import localeDe from '@angular/common/locales/de';
 import localeDeExtra from '@angular/common/locales/extra/de';
 
-const { findFirst, forEach, toMap, toEntry, toArray } = Stream;
+const { findFirst, forEach, toMap, toEntry, toArray, tryGet } = Stream;
 const { wth, nsc, emp, nvl } = NullSafe;
 const { eq } = Equality;
+const { ddDmmDyyyy } = DateTime;
 
 
 @Component({
@@ -35,6 +35,7 @@ export class BalanceComponent implements OnInit {
 
   sheetId!: number;
   cols!: ColDTO[];
+  maxSize: 100000
   rows!: RowDTO[];
   persons!: PersonDTO[];
 
@@ -45,6 +46,7 @@ export class BalanceComponent implements OnInit {
   selectedPerson: PersonDTO;
 
   statuses: SelectItem[] = [];
+  uploadedFiles: any[] = [];
 
   constructor(public productService: ProductService, private messageService: MessageService,
     private sheetServiceBD : SheetServiceBD, private confirmationService: ConfirmationService) { }
@@ -297,41 +299,81 @@ export class BalanceComponent implements OnInit {
 
   saveToFile(): void {
 
-      let lines: Object[][] = [];
+    let lines: Object[][] = [];
 
-      const papa = new Papa();
-      const conf : UnparseConfig = {
-        delimiter: ";",
-        quoteChar: '"',
-        quotes: true,
-        header: false
-      };
+    const papa = new Papa();
+    const conf : UnparseConfig = {
+      delimiter: ";",
+      quoteChar: '"',
+      quotes: true,
+      header: false
+    };
 
-      lines = lines.concat(toArray(this.persons,
-        (p) => ["PE", p.name, p.letter]
-      ));
+    lines = lines.concat(toArray(this.persons,
+      (p) => ["PE", p.name, p.letter]
+    ));
 
-      const rowToData = (r: RowDTO) => {
+    const rowToData = (r: RowDTO) => {
 
-        let data = ["VR", formatDate(r.date, 'dd.MM.yyyy', "de-DE"), r.paidBy.letter,
-           toArray(r.paidFor, (pf) => pf.letter).join(""), r.amount, r.label, r.category]
+      let data = ["VR", ddDmmDyyyy(r.date), r.paidBy.letter,
+          toArray(r.paidFor, (pf) => pf.letter).join(""), r.amount, r.label, r.category]
 
-        forEach(this.persons,
-          (p) => data = data.concat(wth(r.results.get(p), ["", ""], (rs) => [rs.part, rs.due]))
-        )
+      forEach(this.persons,
+        (p) => data = data.concat(wth(r.results.get(p), ["", ""], (rs) => [rs.part, rs.due]))
+      )
 
-        return data;
+      return data;
+    }
+
+    lines = lines.concat(toArray(this.rows,
+      (row) => rowToData(row)
+    ));
+
+    const blob = new Blob([papa.unparse(lines, conf)], {
+      type: "text/plain;charset=utf-8"
+    });
+
+    FileSaver.saveAs(blob, 'data-export '
+      + DateTime.yyyymmdd_hhmmss(new Date()) + ".csv");
+  }
+
+  readFromFile(event: { files: any; }) {
+    for (let file of event.files) {
+        this.uploadedFiles.push(file);
+    }
+
+    const papa = new Papa();
+    const conf : ParseConfig = {
+      delimiter: ";",
+      quoteChar: '"',
+      header: false
+    };
+
+    for (var index = 0; index < this.uploadedFiles.length; index++) {
+      let reader = new FileReader();
+      reader.onload = () => {
+        const pres = papa.parse(wth(reader.result, "", (r) => r.toString()), conf);
+        const persons: Map<string, PersonDTO> = new Map();
+        forEach(pres.data, (line: string[]) => {
+          if (eq(line[0], "PE")) {
+            const person: PersonDTO = {id: null, letter:tryGet(line, 1), name:tryGet(line, 2)};
+            persons.set(person.letter, person);
+            this.sheetServiceBD.savePerson(person, this.sheetId);
+          } else if (eq(line[0], "VR")) {
+            this.sheetServiceBD.saveRow(
+              //["VR", formatDate(r.date, 'dd.MM.yyyy', "de-DE"), r.paidBy.letter,
+              //toArray(r.paidFor, (pf) => pf.letter).join(""), r.amount, r.label, r.category]
+              {id: null, date: ddDmmDyyyy(tryGet(line, 1)), paidBy: nvl(persons.get(tryGet(line, 2))),
+               paidFor: toArray(tryGet(line, 3), (pf) => nvl(persons.get(pf))), amount: new Number(tryGet(line, 4)).valueOf(),
+               label: tryGet(line, 5), category: tryGet(line, 6)}, this.sheetId);
+          }
+        })
       }
+      reader.readAsText(this.uploadedFiles[index]);
+    };
 
-      lines = lines.concat(toArray(this.rows,
-        (row) => rowToData(row)
-      ));
+    this.messageService.add({severity: 'info', summary: 'File Uploaded', detail: ''});
 
-      const blob = new Blob([papa.unparse(lines, conf)], {
-        type: "text/plain;charset=utf-8"
-      });
 
-      FileSaver.saveAs(blob, 'data' + '_export_'
-        + formatDate(Date.now(),'yyyyMMdd_HHmmss', "de-DE") + ".csv");
   }
 }

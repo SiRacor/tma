@@ -1,5 +1,5 @@
 import { Injectable } from "@angular/core";
-import { NullSafe, Stream, Equality, AccessorDelegate } from "utils";
+import { NullSafe, Stream, Equality, AccessorDelegate } from 'utils';
 import { ColDTO, ColType, PersonDTO, RowDTO, SheetDTO } from "common";
 import { Person, Row, Sheet } from './sheet';
 const { nsc, nvl, wth } = NullSafe;
@@ -135,6 +135,11 @@ export class SheetService {
       }
 
     } else {
+
+      let maxId = -1;
+      forEach(this.sheet.persons, (p) => p.id > maxId, (r) => maxId = r.id)
+
+      idx = nvl(idx, maxId + 1);
 
       console.log(idx);
       person = new Person(personDto.id, personDto.name, personDto.letter);
