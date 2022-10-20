@@ -76,10 +76,15 @@ export class SheetService {
 
     } else {
 
+      let maxId = -1;
+      forEach(this.sheet.rows, (r) => r.id > maxId, (r) => maxId = r.id)
+
+      idx = nvl(idx, maxId + 1);
+
       row = new Row(rowDto.id, new Date(rowDto.date), paidBy, paidFor,
       rowDto.label, rowDto.category, new Number(nvl(rowDto.amount, 0)).valueOf(), this.sheet);
 
-      if (idx && idx >= 0 && idx < count(this.sheet.rows)) {
+      if (idx >= 0 && idx < count(this.sheet.rows)) {
 
         let arr = Array.from(this.sheet.rows);
         arr.splice(idx, 0, row);
@@ -87,9 +92,10 @@ export class SheetService {
         this.sheet.rows = new Set(arr);
 
       } else {
-
         this.sheet.rows.add(row)
       }
+
+      row.id = idx;
     }
 
     row.calc();
@@ -106,7 +112,6 @@ export class SheetService {
 
   public savePerson(personDto: PersonDTO, sheetId : number, idx?: number) : number {
 
-    console.log(idx);
     let ret: number = this.savePersonInt(personDto, sheetId, idx);
     this.store();
     return ret;
@@ -114,37 +119,32 @@ export class SheetService {
 
   protected savePersonInt(personDto: PersonDTO, sheetId: number, idx?: number) : number {
 
-    let person : Person | null =
-      findFirst(this.sheet.persons, (pers) => pers.id == personDto.id);
+    let person : Person | null = findFirst(this.sheet.persons,
+      (pers) => pers.id == personDto.id || eq(pers.letter, personDto.letter)
+    );
 
     if (nsc(person)) {
 
-      console.log(idx);
       person.name = personDto.name;
       person.letter = personDto.letter;
 
       if (nsc(idx) && idx >= 0 && idx < count(this.sheet.persons)) {
 
         let arr = toArray(this.sheet.persons, (p) => neq(p.id, person.id),(p) => p);
-
-        console.log(arr);
         arr.splice(idx, 0, person);
 
-        console.log(arr);
         this.sheet.persons = new Set(arr);
       }
 
     } else {
 
       let maxId = -1;
-      forEach(this.sheet.persons, (p) => p.id > maxId, (r) => maxId = r.id)
+      forEach(this.sheet.persons, (p) => p.id > maxId, (p) => maxId = p.id)
 
       idx = nvl(idx, maxId + 1);
-
-      console.log(idx);
       person = new Person(personDto.id, personDto.name, personDto.letter);
 
-      if (idx && idx >= 0 && idx < count(this.sheet.persons)) {
+      if (idx >= 0 && idx < count(this.sheet.persons)) {
         let arr = Array.from(this.sheet.persons);
         arr.splice(idx, 0, person);
 
@@ -153,6 +153,8 @@ export class SheetService {
       } else {
         this.sheet.persons.add(person);
       }
+
+      person.id = idx;
     }
     return person.id;
   };
@@ -180,9 +182,6 @@ export class SheetService {
 
     let persById : (id: number) => PersonDTO =
       (id: number) => findFirst(persons, (p) => p.id == id);
-
-    let persByLetter : (letter: string) => PersonDTO =
-      (letter: string) => findFirst(persons, (p) => p.letter == letter);
 
     forEach(this.sheet.rows, (row) => {
 

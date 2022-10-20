@@ -12,6 +12,7 @@ import { Papa, ParseConfig, UnparseConfig } from 'ngx-papaparse';
 import { registerLocaleData } from '@angular/common';
 import localeDe from '@angular/common/locales/de';
 import localeDeExtra from '@angular/common/locales/extra/de';
+import { FileUpload } from 'primeng/fileupload';
 
 const { findFirst, forEach, toMap, toEntry, toArray, tryGet } = Stream;
 const { wth, nsc, emp, nvl } = NullSafe;
@@ -214,11 +215,17 @@ export class BalanceComponent implements OnInit {
 
   readSheet(): void {
     let sheetDto = this.sheetServiceBD.read(nvl(this.sheetId, 0));
-    this.sheetId = sheetDto.id;
-    this.persons = null;
-    this.persons = sheetDto.persons;
-    this.rows = sheetDto.rows;
-    this.cols = sheetDto.cols;
+    if (nsc(sheetDto)) {
+      this.sheetId = sheetDto.id;
+      this.persons = sheetDto.persons;
+      this.rows = sheetDto.rows;
+      this.cols = sheetDto.cols;
+    } else {
+      this.sheetId = null;
+      this.persons = [];
+      this.rows = [];
+      this.cols = [];
+    }
 
     /**
      *
@@ -337,10 +344,15 @@ export class BalanceComponent implements OnInit {
       + DateTime.yyyymmdd_hhmmss(new Date()) + ".csv");
   }
 
+  @ViewChild('fu', {static: false}) fileUpload: FileUpload;
+
   readFromFile(event: { files: any; }) {
+
     for (let file of event.files) {
         this.uploadedFiles.push(file);
     }
+
+    event.files = [];
 
     const papa = new Papa();
     const conf : ParseConfig = {
@@ -352,28 +364,59 @@ export class BalanceComponent implements OnInit {
     for (var index = 0; index < this.uploadedFiles.length; index++) {
       let reader = new FileReader();
       reader.onload = () => {
+
         const pres = papa.parse(wth(reader.result, "", (r) => r.toString()), conf);
         const persons: Map<string, PersonDTO> = new Map();
-        forEach(pres.data, (line: string[]) => {
-          if (eq(line[0], "PE")) {
-            const person: PersonDTO = {id: null, letter:tryGet(line, 1), name:tryGet(line, 2)};
+
+        console.log(reader.result);
+
+        forEach(<string[]> pres.data,
+
+          (line) => eq(tryGet(line, 0), "PE"),
+          (line) => {
+
+            const person: PersonDTO = {
+              id: null,
+              name:tryGet(line, 1),
+              letter:tryGet(line, 2)
+            };
+
             persons.set(person.letter, person);
-            this.sheetServiceBD.savePerson(person, this.sheetId);
-          } else if (eq(line[0], "VR")) {
-            this.sheetServiceBD.saveRow(
-              //["VR", formatDate(r.date, 'dd.MM.yyyy', "de-DE"), r.paidBy.letter,
-              //toArray(r.paidFor, (pf) => pf.letter).join(""), r.amount, r.label, r.category]
-              {id: null, date: ddDmmDyyyy(tryGet(line, 1)), paidBy: nvl(persons.get(tryGet(line, 2))),
-               paidFor: toArray(tryGet(line, 3), (pf) => nvl(persons.get(pf))), amount: new Number(tryGet(line, 4)).valueOf(),
-               label: tryGet(line, 5), category: tryGet(line, 6)}, this.sheetId);
+            wth(this.sheetServiceBD.savePerson(person, this.sheetId),
+             (id) => person.id = id
+            );
           }
-        })
+        );
+
+        forEach(<string[]> pres.data,
+
+          (line) => eq(tryGet(line, 0), "VR"),
+          (line) => {
+
+            const row: RowDTO = {
+              id: null,
+              date: ddDmmDyyyy(tryGet(line, 1)),
+              paidBy: nvl(persons.get(tryGet(line, 2))),
+              paidFor: toArray(tryGet(line, 3), (pf) => nvl(persons.get(pf))),
+              amount: new Number(tryGet(line, 4)).valueOf(),
+              label: tryGet(line, 5),
+              category: tryGet(line, 6)
+            };
+
+            this.sheetServiceBD.saveRow(row, this.sheetId);
+          }
+        );
+
+        this.readSheet();
+        this.fileUpload.clear();
+
+        this.messageService.add({severity: 'info', summary: 'File Uploaded', detail: ''});
       }
+
       reader.readAsText(this.uploadedFiles[index]);
     };
 
-    this.messageService.add({severity: 'info', summary: 'File Uploaded', detail: ''});
-
+    this.uploadedFiles = [];
 
   }
 }

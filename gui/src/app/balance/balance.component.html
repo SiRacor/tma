@@ -2,16 +2,22 @@
 
 <p-contextMenu #personMenu [model]="personMenuItems"></p-contextMenu>
 
+<p-toolbar styleClass="mb-4">
+  <ng-template pTemplate="left">
+    <button type="button" pButton pRipple icon="pi pi-file" (click)="saveToFile()" class="mr-2" pTooltip="CSV" tooltipPosition="bottom"></button>
+    <!--
+    <p-fileUpload #fubauto mode="basic" name="demo[]"  url="./upload.php" (onUpload)="readFromFile($event)" accept=".csv" [maxFileSize]=maxSize [auto]="true" label="Import" chooseLabel="Import" class="mr-2 inline-block"></p-fileUpload>
+-->
+    <p-fileUpload #fu mode="basic" [auto]="true" name="uploadedFiles[]" [customUpload]="true" (uploadHandler)="readFromFile($event)"
+    accept=".csv" [maxFileSize]=maxSize label="Import" chooseLabel="Import" class="mr-2 inline-block"
+    update="#fu" process="#fu"></p-fileUpload>
+  </ng-template>
+</p-toolbar>
+
 <p-card header="Personen">
   <p-table #dt1 [value]="persons" [(contextMenuSelection)]="selectedPerson"
   [contextMenu]="personMenu" styleClass="p-datatable-sm"
   editMode="row" dataKey="id" [style]="{width:'280px'}" (onRowReorder)="onRowReorder($event)">
-    <ng-template pTemplate="caption">
-      <div class="flex">
-        <button type="button" pButton pRipple icon="pi pi-file" (click)="saveToFile()" class="mr-2" pTooltip="CSV" tooltipPosition="bottom"></button>
-        <p-fileUpload #fubauto mode="basic" name="demo[]" url="./upload.php" accept="*/*" [maxFileSize]=maxSize (onUpload)="readFromFile($event)" [auto]="true" chooseLabel="Browse"></p-fileUpload>
-      </div>
-    </ng-template>
     <ng-template pTemplate="header" let-columns>
         <tr>
           <th style="width:20px;"></th>

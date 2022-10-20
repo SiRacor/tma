@@ -74,7 +74,7 @@ export class Row {
   }
 
   public constructor(
-      public readonly id: number,
+      public id: number,
       public date: Date,
       public paidBy: Person,
       paidFor: Person[],

@@ -32,6 +32,7 @@ import {CardModule} from 'primeng/card';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ConfirmationService } from 'primeng/api';
 import { FileUploadModule } from 'primeng/fileupload';
+import { ToolbarModule } from 'primeng/toolbar';
 
 import { AddRowDirective } from './balance/add-row.directive';
 
@@ -64,7 +65,8 @@ import { AddRowDirective } from './balance/add-row.directive';
     RouterModule,
     CardModule,
     ConfirmDialogModule,
-    FileUploadModule
+    FileUploadModule,
+    ToolbarModule
   ],
   providers: [ProductService, SheetService, SheetServiceBD, SheetDAO, ConfirmationService],
   bootstrap: [AppComponent]
