@@ -1,6 +1,6 @@
 import { LocalStore } from './local.store';
-import { Directive, Injectable } from "@angular/core";
-import { PersonDTO, RowDTO, SheetDTO } from "common";
+import { Injectable } from "@angular/core";
+import { SheetDTO } from "common";
 import { IStore } from './i.store';
 
 @Injectable({
