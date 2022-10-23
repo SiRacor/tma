@@ -1,10 +1,10 @@
-import { SheetServiceBD } from './sheet.service.bd';
+import { SheetServiceBD } from './service/sheet.service.bd';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpClient } from '@angular/common/http';
 import { BalanceComponent } from './balance.component';
 import { ProductService } from './productservice';
 import { MessageService } from 'primeng/api';
-import { SheetService } from './sheet.service';
+import { SheetService } from './service/sheet.service';
 
 describe('BalanceComponent', () => {
   let component: BalanceComponent;

@@ -1,10 +1,11 @@
 import { Injectable } from "@angular/core";
 import { NullSafe, Stream, Equality, AccessorDelegate } from 'utils';
 import { ColDTO, ColType, PersonDTO, RowDTO, SheetDTO } from "common";
-import { Person, Row, Sheet } from './sheet';
+import { Person, Row, Sheet } from '../sheet';
+import { StoreBD } from "../store/store.bd";
 const { nsc, nvl, wth } = NullSafe;
 const { eq, neq } = Equality;
-const { forEach, findFirst, toArray, toMap, toEntry, count } = Stream;
+const { forEach, findFirst, toArray, toMap, toEntry, count, tryGet } = Stream;
 
 @Injectable()
 export class SheetService {
@@ -12,12 +13,14 @@ export class SheetService {
   public static readonly STORAGE_ID: string = "polycule balance sheet";
   protected sheet!: Sheet;
 
-  constructor () {
+  constructor (public storeBd: StoreBD) {
 
     this.sheet = new Sheet();
-    let data: string = localStorage.getItem(SheetService.STORAGE_ID) + "";
 
-    wth(<SheetDTO> JSON.parse(data), (dto) => {
+    this.storeBd = storeBd;
+    let sheetDto = tryGet(storeBd.readAll(), 0);
+
+    wth(sheetDto, (dto) => {
 
       this.sheet.id = dto.id;
 
@@ -29,24 +32,11 @@ export class SheetService {
         this.saveRowInt(row, this.sheet.id)
       );
     });
-
-
-  }
-
-  protected store() : void {
-    let dto: SheetDTO = this.read(0);
-
-    dto.cols = new Array();
-    dto.total = new Map();
-
-    forEach(dto.rows, (r) => r.results = new Map());
-
-    localStorage.setItem(SheetService.STORAGE_ID, JSON.stringify(dto))
   }
 
   public saveRow(rowDto: RowDTO, sheetId : number, idx?: number) : number {
     let ret: number = this.saveRowInt(rowDto, sheetId, idx);
-    this.store();
+    this.storeBd.save(this.read(0));
     return ret;
   }
 
@@ -106,14 +96,14 @@ export class SheetService {
     let ret : boolean = wth(findFirst(this.sheet.rows, (row) => row.id == rowId), (row) =>
       this.sheet.rows.delete(row)
     );
-    this.store();
+    this.storeBd.save(this.read(0));
     return ret;
   };
 
   public savePerson(personDto: PersonDTO, sheetId : number, idx?: number) : number {
 
     let ret: number = this.savePersonInt(personDto, sheetId, idx);
-    this.store();
+    this.storeBd.save(this.read(0));
     return ret;
   }
 
@@ -167,7 +157,7 @@ export class SheetService {
 
     if (ret) {
       forEach(this.sheet.rows, (row) => row.calc());
-      this.store();
+      this.storeBd.save(this.read(0));
     }
 
     return ret;

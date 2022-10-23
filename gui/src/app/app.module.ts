@@ -1,10 +1,11 @@
+import { LocalStore } from './balance/store/local.store';
+import { IStore } from './balance/store/i.store';
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 
 import { ProductService } from './balance/productservice';
 import { SheetDAO } from './balance/sheetdao';
-import { SheetService } from './balance/sheet.service';
-import { SheetServiceBD } from './balance/sheet.service.bd';
+import { SheetService } from './balance/service/sheet.service';
 
 import { AppRoutingModule } from './app-routing.module';
 import { AppComponent } from './app.component';
@@ -35,6 +36,7 @@ import { FileUploadModule } from 'primeng/fileupload';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { AddRowDirective } from './balance/add-row.directive';
+import { StoreBD } from './balance/store/store.bd';
 
 
 @NgModule({
@@ -68,7 +70,7 @@ import { AddRowDirective } from './balance/add-row.directive';
     FileUploadModule,
     ToolbarModule
   ],
-  providers: [ProductService, SheetService, SheetServiceBD, SheetDAO, ConfirmationService],
+  providers: [ProductService, SheetService, SheetDAO, ConfirmationService, StoreBD, LocalStore],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

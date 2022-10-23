@@ -3,7 +3,6 @@ import { ProductService } from './productservice';
 import { Product } from './product';
 import { Stream, NullSafe, Equality, DateTime } from 'utils'
 import { PersonDTO, RowDTO, ColDTO, ResultDTO } from "common";
-import { SheetServiceBD } from './sheet.service.bd';
 import { Component, EventEmitter, ViewChild } from '@angular/core';
 import { OnInit } from '@angular/core';
 import { RowToggler, Table } from 'primeng/table';
@@ -13,6 +12,7 @@ import { registerLocaleData } from '@angular/common';
 import localeDe from '@angular/common/locales/de';
 import localeDeExtra from '@angular/common/locales/extra/de';
 import { FileUpload } from 'primeng/fileupload';
+import { SheetService } from './service/sheet.service';
 
 const { findFirst, forEach, toMap, toEntry, toArray, tryGet } = Stream;
 const { wth, nsc, emp, nvl } = NullSafe;
@@ -23,7 +23,7 @@ const { ddDmmDyyyy } = DateTime;
 @Component({
   selector: 'app-balance',
   templateUrl: './balance.component.html',
-  providers: [MessageService, ProductService, SheetServiceBD, ConfirmationService],
+  providers: [MessageService, ProductService, SheetService, ConfirmationService],
   styleUrls: ['./balance.component.css']
 })
 export class BalanceComponent implements OnInit {
@@ -50,7 +50,7 @@ export class BalanceComponent implements OnInit {
   uploadedFiles: any[] = [];
 
   constructor(public productService: ProductService, private messageService: MessageService,
-    private sheetServiceBD : SheetServiceBD, private confirmationService: ConfirmationService) { }
+    private sheetService : SheetService, private confirmationService: ConfirmationService) { }
 
   ngOnInit() {
     this.productService.getProductsSmall().then(data => this.products1 = data);
@@ -73,7 +73,7 @@ export class BalanceComponent implements OnInit {
     let sky : PersonDTO = { id: 2, name: "Sky", letter: "S" };
     let sira : PersonDTO = { id: 3, name: "Sira", letter: "W" };
 
-    let bd = this.sheetServiceBD;
+    let bd = this.sheetService;
 
     this.readSheet();
     if (emp(this.rows)) {
@@ -181,7 +181,7 @@ export class BalanceComponent implements OnInit {
     let idx = event.dropIndex;
     this.messageService.add({severity: 'warn', detail: JSON.stringify(event) + JSON.stringify(a)});
 
-    this.sheetServiceBD.savePerson(a, this.sheetId, idx);
+    this.sheetService.savePerson(a, this.sheetId, idx);
 
     this.readSheet();
   }
@@ -193,8 +193,8 @@ export class BalanceComponent implements OnInit {
   onItemDelete(item: RowDTO | PersonDTO | any, confirmed?: boolean) : void {
 
     const accept = () => {
-      if (item.letter && this.sheetServiceBD.deletePerson(item.id, this.sheetId) ||
-          item.date && this.sheetServiceBD.deleteRow(item.id, this.sheetId)) {
+      if (item.letter && this.sheetService.deletePerson(item.id, this.sheetId) ||
+          item.date && this.sheetService.deleteRow(item.id, this.sheetId)) {
         this.messageService.add({severity: 'info', summary: 'Eintrag wurde gel\u00f6scht.', detail: JSON.stringify(item)});
         this.readSheet();
         if (this.currentSort) this.customSort(this.currentSort);
@@ -214,7 +214,7 @@ export class BalanceComponent implements OnInit {
   }
 
   readSheet(): void {
-    let sheetDto = this.sheetServiceBD.read(nvl(this.sheetId, 0));
+    let sheetDto = this.sheetService.read(nvl(this.sheetId, 0));
     if (nsc(sheetDto)) {
       this.sheetId = sheetDto.id;
       this.persons = sheetDto.persons;
@@ -244,7 +244,7 @@ export class BalanceComponent implements OnInit {
   onItemEditSave(item: RowDTO, idx: number) : void;
   onItemEditSave(item: RowDTO | PersonDTO | any, idx: number) : void {
 
-    let bd = this.sheetServiceBD;
+    let bd = this.sheetService;
 
     if (item.letter) {
 
@@ -382,7 +382,7 @@ export class BalanceComponent implements OnInit {
             };
 
             persons.set(person.letter, person);
-            wth(this.sheetServiceBD.savePerson(person, this.sheetId),
+            wth(this.sheetService.savePerson(person, this.sheetId),
              (id) => person.id = id
             );
           }
@@ -403,7 +403,7 @@ export class BalanceComponent implements OnInit {
               category: tryGet(line, 6)
             };
 
-            this.sheetServiceBD.saveRow(row, this.sheetId);
+            this.sheetService.saveRow(row, this.sheetId);
           }
         );
 

@@ -1,4 +1,4 @@
-import { SheetService } from './sheet.service';
+import { SheetService } from './service/sheet.service';
 import { TestBed } from '@angular/core/testing';
 import { Assert } from '../assert';
 import { Stream, NullSafe } from "utils";
