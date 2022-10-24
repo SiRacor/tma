@@ -16,7 +16,7 @@
 
 <p-card header="Personen">
   <p-table #dt1 [value]="persons" [(contextMenuSelection)]="selectedPerson"
-  [contextMenu]="personMenu" styleClass="p-datatable-sm"
+  [contextMenu]="personMenu" styleClass="p-datatable-sm"  responsiveLayout="scroll"
   editMode="row" dataKey="id" [style]="{width:'280px'}" (onRowReorder)="onRowReorder($event)">
     <ng-template pTemplate="header" let-columns>
         <tr>
@@ -82,7 +82,10 @@
 <p-contextMenu #rowMenu [model]="rowMenuItems"></p-contextMenu>
 
 <p-card header="Daten">
-  <p-table #dt [value]="rows" [(contextMenuSelection)]="selectedRow" [contextMenu]="rowMenu" styleClass="p-datatable-sm" [columns]="cols" dataKey="id" editMode="row" (sortFunction)="customSort($event)" [customSort]="true" [style]="{width:'1200px'}">
+  <p-table #dt [value]="rows" [(contextMenuSelection)]="selectedRow" responsiveLayout="scroll"
+   [contextMenu]="rowMenu" styleClass="p-datatable-sm" [columns]="cols"
+    dataKey="id" editMode="row" (sortFunction)="customSort($event)"
+    [customSort]="true" [style]="{width:'1200px'}">
     <ng-template pTemplate="header" let-columns>
         <tr>
           <ng-container *ngFor="let col of columns" [ngSwitch]="true">

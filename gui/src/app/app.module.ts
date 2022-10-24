@@ -1,9 +1,7 @@
 import { LocalStore } from './balance/store/local.store';
-import { IStore } from './balance/store/i.store';
 import { NgModule } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 
-import { ProductService } from './balance/productservice';
 import { SheetDAO } from './balance/sheetdao';
 import { SheetService } from './balance/service/sheet.service';
 
@@ -14,7 +12,7 @@ import { RadarComponent } from './radar/radar.component';
 import { TabMenuModule } from 'primeng/tabmenu';
 import { RouterModule } from '@angular/router';
 
-import {FormsModule} from '@angular/forms';
+import { FormsModule } from '@angular/forms';
 import { HttpClientModule } from '@angular/common/http';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
@@ -37,6 +35,8 @@ import { ToolbarModule } from 'primeng/toolbar';
 
 import { AddRowDirective } from './balance/add-row.directive';
 import { StoreBD } from './balance/store/store.bd';
+import { PersonsComponent } from './persons/persons.component';
+import { ModelComponent } from './model/model.component';
 
 
 @NgModule({
@@ -44,7 +44,9 @@ import { StoreBD } from './balance/store/store.bd';
     AppComponent,
     BalanceComponent,
     RadarComponent,
-    AddRowDirective
+    AddRowDirective,
+    PersonsComponent,
+    ModelComponent
   ],
   imports: [
     AppRoutingModule,
@@ -70,7 +72,7 @@ import { StoreBD } from './balance/store/store.bd';
     FileUploadModule,
     ToolbarModule
   ],
-  providers: [ProductService, SheetService, SheetDAO, ConfirmationService, StoreBD, LocalStore],
+  providers: [SheetService, SheetDAO, ConfirmationService, StoreBD, LocalStore],
   bootstrap: [AppComponent]
 })
 export class AppModule { }

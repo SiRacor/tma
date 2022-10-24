@@ -1,11 +1,9 @@
 import { SelectItem, SortEvent, MenuItem, MessageService, ConfirmationService } from 'primeng/api';;
-import { ProductService } from './productservice';
-import { Product } from './product';
 import { Stream, NullSafe, Equality, DateTime } from 'utils'
 import { PersonDTO, RowDTO, ColDTO, ResultDTO } from "common";
-import { Component, EventEmitter, ViewChild } from '@angular/core';
+import { Component, ViewChild } from '@angular/core';
 import { OnInit } from '@angular/core';
-import { RowToggler, Table } from 'primeng/table';
+import { Table } from 'primeng/table';
 import * as FileSaver from 'file-saver';
 import { Papa, ParseConfig, UnparseConfig } from 'ngx-papaparse';
 import { registerLocaleData } from '@angular/common';
@@ -23,14 +21,10 @@ const { ddDmmDyyyy } = DateTime;
 @Component({
   selector: 'app-balance',
   templateUrl: './balance.component.html',
-  providers: [MessageService, ProductService, SheetService, ConfirmationService],
+  providers: [MessageService, SheetService, ConfirmationService],
   styleUrls: ['./balance.component.css']
 })
 export class BalanceComponent implements OnInit {
-
-  products1: Product[] = [];
-
-  products2: Product[] = [];
 
   currentSort? : SortEvent;
 
@@ -49,13 +43,10 @@ export class BalanceComponent implements OnInit {
   statuses: SelectItem[] = [];
   uploadedFiles: any[] = [];
 
-  constructor(public productService: ProductService, private messageService: MessageService,
+  constructor(private messageService: MessageService,
     private sheetService : SheetService, private confirmationService: ConfirmationService) { }
 
   ngOnInit() {
-    this.productService.getProductsSmall().then(data => this.products1 = data);
-    this.productService.getProductsSmall().then(data => this.products2 = data);
-
     this.rowMenuItems = [
       {label: 'Kopiere', icon: 'pi pi-fw pi-copy', command: () => this.onRowCopy(this.selectedRow)},
       {label: 'Bearbeite', icon: 'pi pi-fw pi-check', command: () => this.onRowEditInit(this.selectedRow)},

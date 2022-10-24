@@ -1,8 +1,7 @@
-import { SheetServiceBD } from './service/sheet.service.bd';
+
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { HttpClient } from '@angular/common/http';
 import { BalanceComponent } from './balance.component';
-import { ProductService } from './productservice';
 import { MessageService } from 'primeng/api';
 import { SheetService } from './service/sheet.service';
 
@@ -21,7 +20,7 @@ describe('BalanceComponent', () => {
 
     await TestBed.configureTestingModule({
       providers: [
-        MessageService, ProductService, SheetService, SheetServiceBD,
+        MessageService, SheetService,
         { provide: HttpClient, useValue: spy2 }
       ],
       declarations: [ BalanceComponent ]

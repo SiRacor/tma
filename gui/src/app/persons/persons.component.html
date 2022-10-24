@@ -1,0 +1,68 @@
+<p-toast></p-toast>
+
+<p-contextMenu #personMenu [model]="personMenuItems"></p-contextMenu>
+<br>
+<p-card header="Personen">
+  <p-table #dt1 [value]="persons" [(contextMenuSelection)]="selectedPerson"
+  [contextMenu]="personMenu" styleClass="p-datatable-sm" responsiveLayout="scroll"
+  editMode="row" dataKey="id" (onRowReorder)="oncustomSort($event)">
+    <ng-template pTemplate="header" let-columns>
+        <tr>
+          <th style="width:20px;"></th>
+          <th style="width:80px">Name</th>
+          <th style="width:50px">Kürzel</th>
+          <th></th>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-editing="editing" let-rowData let-pi="rowIndex">
+        <tr [pEditableRow]="rowData" [pContextMenuRow]="rowData" [pReorderableRow]="pi">
+          <td>
+              <span class="pi pi-bars" [pReorderableRowHandle]="pi"></span>
+          </td>
+          <td >
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="text" [(ngModel)]="rowData.name"
+                style="width:60px">
+              </ng-template>
+
+              <ng-template pTemplate="output">
+                {{rowData.name}}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <td>
+            <p-cellEditor>
+              <ng-template pTemplate="input">
+                <input pInputText type="text" [(ngModel)]="rowData.letter"
+                style="width:30px">
+              </ng-template>
+
+              <ng-template pTemplate="output">
+                {{rowData.letter}}
+              </ng-template>
+            </p-cellEditor>
+          </td>
+          <!---->
+          <td style="text-align:center; padding-top:0.1rem; padding-bottom:0.1rem" >
+              <button *ngIf="!editing" pButton pRipple type="button" pInitEditableRow icon="pi pi-pencil" class="p-button-rounded p-button-text"></button>
+              <button *ngIf="!editing" pButton pRipple type="button" (click)="onItemDelete(rowData)" icon="pi pi-times" class="p-button-rounded p-button-text"></button>
+              <button *ngIf="editing" pButton pRipple type="button" pSaveEditableRow icon="pi pi-check" (click)="onItemEditSave(rowData, pi)" class="p-button-rounded p-button-text p-button-success mr-2"></button>
+              <button *ngIf="editing" pButton pRipple type="button" pCancelEditableRow icon="pi pi-times" (click)="onItemEditCancel(rowData, pi)" class="p-button-rounded p-button-text p-button-danger"></button>
+          </td>
+        </tr>
+    </ng-template>
+    <ng-template pTemplate="footer" let-columns>
+      <tr>
+        <td></td>
+        <td></td>
+        <td></td>
+        <td style="text-align:center">
+          <button pButton type="button"icon="pi pi-plus" class="p-button-rounded p-button-text" [label]=""
+          pAddRow [table]="dt1" [newRow]="onPersonNewInit(null)" style="margin-top:-0.5rem; margin-bottom:-0.5rem"></button>
+        </td>
+      </tr>
+    </ng-template>
+
+  </p-table>
+</p-card>
