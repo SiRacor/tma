@@ -1,11 +1,10 @@
 <p-toast></p-toast>
 
-<p-contextMenu #personMenu [model]="personMenuItems"></p-contextMenu>
 <br>
 <p-card header="Personen">
   <p-table #dt1 [value]="persons" [(contextMenuSelection)]="selectedPerson"
-  [contextMenu]="personMenu" styleClass="p-datatable-sm" responsiveLayout="scroll"
-  editMode="row" dataKey="id" (onRowReorder)="oncustomSort($event)">
+  styleClass="p-datatable-sm" responsiveLayout="scroll"
+  editMode="row" dataKey="id" (onRowReorder)="onRowReorder($event)">
     <ng-template pTemplate="header" let-columns>
         <tr>
           <th style="width:20px;"></th>

@@ -298,7 +298,7 @@ export class BalanceComponent implements OnInit {
       header: false
     };
 
-    lines = lines.concat(toArray(this.persons,
+    lines = lines.concat(toArray(this.persons, (p) => p.id >= 0,
       (p) => ["PE", p.name, p.letter]
     ));
 
@@ -350,6 +350,9 @@ export class BalanceComponent implements OnInit {
         const pres = papa.parse(wth(reader.result, "", (r) => r.toString()), conf);
         const persons: Map<string, PersonDTO> = new Map();
 
+        // add magic persons for lookup
+        forEach(filter(this.persons, (p) => p.id < 0), (p) => persons.set(p.letter, p));
+
         console.log(reader.result);
 
         forEach(<string[]> pres.data,
@@ -379,7 +382,7 @@ export class BalanceComponent implements OnInit {
               id: null,
               date: ddDmmDyyyy(tryGet(line, 1)),
               paidBy: nvl(persons.get(tryGet(line, 2))),
-              paidFor: toArray(tryGet(line, 3), (pf) => nvl(persons.get(pf))),
+              paidFor: wth(persons.get(tryGet(line, 3)), toArray(tryGet(line, 3), (pf) => nvl(persons.get(pf))), (pf) => [pf]),
               amount: new Number(tryGet(line, 4)).valueOf(),
               label: tryGet(line, 5),
               category: tryGet(line, 6)

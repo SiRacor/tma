@@ -169,30 +169,24 @@ export class PersonsComponent implements OnInit {
     }
 
     this.readSheet();
-    if (this.currentSort) this.oncustomSort(this.currentSort);
 }
 
   onItemEditCancel(item: any, index: number) {
     this.readSheet();
   }
 
-  oncustomSort(event: SortEvent) {
+  onRowReorder(event: { dragIndex: number; dropIndex: number }) {
 
-    let rows: RowDTO[] = this.rows;
-    this.currentSort = event;
+    if (!nsc(event) || eq(event.dragIndex, event.dropIndex))
+    return;
 
-    rows.sort((data1, data2) => {
-      let result = 0;
+    wth(this.persons[event.dropIndex], (a) => {
+      let idx = event.dropIndex;
+      this.messageService.add({severity: 'warn', detail: JSON.stringify(event) + JSON.stringify(a)});
 
-      if (event.data != null) {
-        wth(findFirst(this.cols, (c) => eq(c.id, event.field)), (col) => {
-          result = col.sorter(data1, data2);
-        });
-      }
+      this.sheetService.savePerson(a, this.sheetId, idx);
 
-      return result * wth(event, 1, (e) => e.order);
+      this.readSheet();
     });
-
-    event.data = this.rows
   }
 }
