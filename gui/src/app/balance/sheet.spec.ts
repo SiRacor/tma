@@ -1,3 +1,4 @@
+import { StoreBD } from './store/store.bd';
 import { SheetService } from './service/sheet.service';
 import { TestBed } from '@angular/core/testing';
 import { Assert } from '../assert';
@@ -11,15 +12,17 @@ const { findFirst } = Stream;
 const { wth } = NullSafe;
 
 describe('SheetdaoService', () => {
-  let service: SheetDAO;
+  let daoService: SheetDAO;
+  let storeBd: StoreBD;
 
   beforeEach(() => {
     TestBed.configureTestingModule({});
-    service = TestBed.inject(SheetDAO);
+    daoService = TestBed.inject(SheetDAO);
+    storeBd = TestBed.inject(StoreBD);
   });
 
   it('should be created', () => {
-    expect(service).toBeTruthy();
+    expect(daoService).toBeTruthy();
   });
 
 
@@ -29,7 +32,7 @@ describe('SheetdaoService', () => {
     let sky : PersonDTO = { id: 2, name: "Sira", letter: "S" } ;
     let julia : PersonDTO = { id: 3, name: "Julia", letter: "J" };
 
-    let service: SheetService = new SheetService();
+    let service: SheetService = new SheetService(storeBd);
     service.savePerson(sira, 0);
     service.savePerson(sky, 0);
     service.savePerson(julia, 0);

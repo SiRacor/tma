@@ -17,7 +17,7 @@
     <ng-template pTemplate="body" let-editing="editing" let-rowData let-pi="rowIndex">
         <tr [pEditableRow]="rowData" [pContextMenuRow]="rowData" [pReorderableRow]="pi">
           <td>
-              <span class="pi pi-bars" [pReorderableRowHandle]="pi"></span>
+              <span *ngIf="rowData.id > -1" class="pi pi-bars" [pReorderableRowHandle]="pi"></span>
           </td>
           <td >
             <p-cellEditor>
@@ -45,8 +45,8 @@
           </td>
           <!---->
           <td style="text-align:center; padding-top:0.1rem; padding-bottom:0.1rem" >
-              <button *ngIf="!editing" pButton pRipple type="button" pInitEditableRow icon="pi pi-pencil" class="p-button-rounded p-button-text"></button>
-              <button *ngIf="!editing" pButton pRipple type="button" (click)="onItemDelete(rowData)" icon="pi pi-times" class="p-button-rounded p-button-text"></button>
+              <button *ngIf="!editing && rowData.id > -1" pButton pRipple type="button" pInitEditableRow icon="pi pi-pencil" class="p-button-rounded p-button-text"></button>
+              <button *ngIf="!editing && rowData.id > -1" pButton pRipple type="button" (click)="onItemDelete(rowData)" icon="pi pi-times" class="p-button-rounded p-button-text"></button>
               <button *ngIf="editing" pButton pRipple type="button" pSaveEditableRow icon="pi pi-check" (click)="onItemEditSave(rowData, pi)" class="p-button-rounded p-button-text p-button-success mr-2"></button>
               <button *ngIf="editing" pButton pRipple type="button" pCancelEditableRow icon="pi pi-times" (click)="onItemEditCancel(rowData, pi)" class="p-button-rounded p-button-text p-button-danger"></button>
           </td>
@@ -66,3 +66,5 @@
 
   </p-table>
 </p-card>
+
+<p-confirmDialog [acceptLabel]="'Ja'" [rejectLabel]="'Nein'" [style]="{width: '450px'}"></p-confirmDialog>

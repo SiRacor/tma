@@ -17,8 +17,8 @@ export class LocalStore implements IStore {
     let sheets: SheetDTO[] = [];
     let data: string = localStorage.getItem(LocalStore.STORAGE_ID) + "";
 
-    sheets.push(JSON.parse(data));
-    forEach(sheets, (sheet) => this.map.set(sheet.id, sheet));
+    forEach(JSON.parse(data), (sheet) => sheets.push(<SheetDTO> sheet));
+    forEach(sheets, (sheet) => nsc(sheet.id), (sheet) => this.map.set(sheet.id, sheet));
   }
 
   public store() : void {
@@ -30,7 +30,8 @@ export class LocalStore implements IStore {
       forEach(sheet.rows, (r) => r.results = new Map());
     });
 
-    localStorage.setItem(LocalStore.STORAGE_ID, JSON.stringify(this.map.values()))
+    let data = JSON.stringify(toArray(this.map.values(), (sheet) => sheet));
+    localStorage.setItem(LocalStore.STORAGE_ID, data);
   }
 
   public save(sheet: SheetDTO) : number | null {
@@ -54,12 +55,12 @@ export class LocalStore implements IStore {
   }
 
   public read(id: number) : SheetDTO | null {
-    if (emp(this.map.values)) this.load();
+    if (emp(this.map.values())) this.load();
     return (this.map.has(id) ? this.map.get(id) : null);
   }
 
   public readAll() : SheetDTO[] | null {
-    if (emp(this.map.values)) this.load();
+    if (emp(this.map.values())) this.load();
     return toArray(this.map.values(), (s: SheetDTO) => s);
   }
 }

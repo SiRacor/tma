@@ -12,10 +12,11 @@ import localeDeExtra from '@angular/common/locales/extra/de';
 import { FileUpload } from 'primeng/fileupload';
 import { SheetService } from './service/sheet.service';
 
-const { findFirst, forEach, toMap, toEntry, toArray, tryGet } = Stream;
+const { findFirst, forEach, toMap, toEntry, toArray, tryGet, filter } = Stream;
 const { wth, nsc, emp, nvl } = NullSafe;
-const { eq } = Equality;
+const { eq, neq } = Equality;
 const { ddDmmDyyyy } = DateTime;
+const { PERSON_ALL, PERSON_MODEL } = SheetService;
 
 
 @Component({
@@ -53,11 +54,6 @@ export class BalanceComponent implements OnInit {
       {label: 'L\u00f6sche', icon: 'pi pi-fw pi-times', command: () => this.onItemDelete(this.selectedRow)}
     ];
 
-    this.personMenuItems = [
-      {label: 'Bearbeite', icon: 'pi pi-fw pi-check', command: () => this.onPersonEditInit(this.selectedPerson)},
-      {label: 'L\u00f6sche', icon: 'pi pi-fw pi-times', command: () => this.onItemDelete(this.selectedPerson)}
-    ];
-
     this.statuses = [{label: 'In Stock', value: 'INSTOCK'},{label: 'Low Stock', value: 'LOWSTOCK'},{label: 'Out of Stock', value: 'OUTOFSTOCK'}]
 
     let julia : PersonDTO = { id: 1, name: "Julia", letter: "J" };
@@ -88,14 +84,17 @@ export class BalanceComponent implements OnInit {
     registerLocaleData(localeDe, 'de-DE', localeDeExtra);
   }
 
-  public get personsPlusA() : PersonDTO[]{
+  public get personsReal() : PersonDTO[]{
+    let ret : PersonDTO[] = filter(this.persons, (p) => p.id >= 0);
+    return ret;
+  }
+
+  public get personsAll() : PersonDTO[]{
     let ret : PersonDTO[] = Array.from(this.persons);
-    ret.push({ id: -1, name: "Alle", letter: "A"});
     return ret;
   }
 
   @ViewChild('dt', {static: false}) private rowTable: Table;
-  @ViewChild('dt1', {static: false}) private personTable: Table;
 
   onRowCopy(row: RowDTO) {
     let copy : RowDTO = this.onRowNewInit(row);
@@ -116,10 +115,6 @@ export class BalanceComponent implements OnInit {
 
   onRowEditInit(row: RowDTO) {
     this.rowTable.initRowEdit(row);
-  }
-
-  onPersonEditInit(person: PersonDTO) {
-    this.personTable.initRowEdit(person);
   }
 
   onRowNewInit(row: RowDTO): RowDTO {
@@ -146,23 +141,6 @@ export class BalanceComponent implements OnInit {
       results: toMap(row.results?.entries(), (e)=> toEntry(e[0], {target: e[1].target, due: 0, ratio: 1, part: ""} ))};
   }
 
-  onPersonNewInit(person: PersonDTO) : PersonDTO {
-
-    let lastPerson: PersonDTO = null;
-    forEach(this.persons,
-      (p) => !nsc(lastPerson) || p.id > lastPerson.id,
-      (p) => lastPerson = p
-    );
-
-    let id : number = 0;
-
-    if (nsc(lastPerson)) {
-      id = lastPerson.id;
-    }
-
-    return { id: id + 1, name: "", letter: ""};
-  }
-
   onRowReorder(event: { dragIndex: number; dropIndex: number }) {
 
     if (!nsc(event) || eq(event.dragIndex, event.dropIndex))
@@ -177,15 +155,12 @@ export class BalanceComponent implements OnInit {
     this.readSheet();
   }
 
-  onItemDelete(item: PersonDTO) : void;
-  onItemDelete(item: PersonDTO, confirmed: boolean) : void;
   onItemDelete(item: RowDTO) : void;
   onItemDelete(item: RowDTO, confirmed: boolean) : void;
-  onItemDelete(item: RowDTO | PersonDTO | any, confirmed?: boolean) : void {
+  onItemDelete(item: RowDTO | any, confirmed?: boolean) : void {
 
     const accept = () => {
-      if (item.letter && this.sheetService.deletePerson(item.id, this.sheetId) ||
-          item.date && this.sheetService.deleteRow(item.id, this.sheetId)) {
+      if (this.sheetService.deleteRow(item.id, this.sheetId)) {
         this.messageService.add({severity: 'info', summary: 'Eintrag wurde gel\u00f6scht.', detail: JSON.stringify(item)});
         this.readSheet();
         if (this.currentSort) this.customSort(this.currentSort);
@@ -202,6 +177,36 @@ export class BalanceComponent implements OnInit {
         accept: accept
       });
     }
+  }
+
+  onChange(event: { value: PersonDTO[], itemValue: PersonDTO }, row: RowDTO): void {
+
+    const paidForToString = () => JSON.stringify(toArray(row.paidFor, (pf) => pf.letter).join(""));
+    console.log(paidForToString());
+    console.log(event);
+
+    let person = event.itemValue;
+
+    if (eq(person.letter, PERSON_ALL.letter) ||
+         eq(person.letter, PERSON_MODEL.letter)) {
+      row.paidFor = [];
+      row.paidFor.push(person);
+      console.log(event);
+    } else {
+
+      let temp = new Array(0);
+      for (let i = 0; i < event.value.length; i++) {
+        if (neq(event.value[i].letter, PERSON_ALL.letter) &&
+            neq(event.value[i].letter, PERSON_MODEL.letter)) {
+          temp.push(event.value[i]);
+        }
+      }
+
+      if (temp.length > 0) {
+        row.paidFor  = temp;
+      }
+    }
+    console.log(paidForToString());
   }
 
   readSheet(): void {
@@ -231,40 +236,26 @@ export class BalanceComponent implements OnInit {
   }
 
 
-  onItemEditSave(item: PersonDTO, idx: number) : void;
-  onItemEditSave(item: RowDTO, idx: number) : void;
-  onItemEditSave(item: RowDTO | PersonDTO | any, idx: number) : void {
+  onItemEditSave(item: RowDTO, idx: number) : void {
 
     let bd = this.sheetService;
 
-    if (item.letter) {
+    let row: RowDTO = item;
+    let maxId = 0;
+    forEach(this.rows, (r) => r.id > maxId, (r) => maxId = r.id);
 
-      let person: PersonDTO = item;
+    if (row.id == undefined) {
+      row.id = ++maxId;
+    }
 
-      bd.savePerson(person, this.sheetId);
+    if (row.amount != undefined && row.id != undefined) {
 
-      this.messageService.add({severity:'success', summary: 'Erfolg', detail:'Person wurde gespeichert!'});
+      bd.saveRow(row, this.sheetId, idx);
 
-    } else if (item.date) {
-
-      let row: RowDTO = item;
-      let maxId = 0;
-      forEach(this.rows, (r) => r.id > maxId, (r) => maxId = r.id);
-
-      if (row.id == undefined) {
-        row.id = ++maxId;
-      }
-
-      if (row.amount != undefined && row.id != undefined) {
-
-        bd.saveRow(row, this.sheetId, idx);
-
-        this.messageService.add({severity:'success', summary: 'Erfolg', detail:'Daten wurden gespeichert!'});
-      }
-      else {
-          this.messageService.add({severity:'error', summary: 'Fehler', detail:'Flasche ID'});
-      }
-
+      this.messageService.add({severity:'success', summary: 'Erfolg', detail:'Daten wurden gespeichert!'});
+    }
+    else {
+        this.messageService.add({severity:'error', summary: 'Fehler', detail:'Flasche ID'});
     }
 
     this.readSheet();
@@ -411,3 +402,4 @@ export class BalanceComponent implements OnInit {
 
   }
 }
+

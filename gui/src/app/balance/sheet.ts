@@ -1,8 +1,9 @@
+import { SheetService } from './service/sheet.service';
 import { Equality, NullSafe, Stream } from "utils";
 
-const { eq } = Equality;
+const { eq, neq } = Equality;
 const { nsc, nvl, nvle, wth } = NullSafe;
-const { forEach, anyMatch, count, toEntry, toMap } = Stream;
+const { forEach, anyMatch, count, toEntry, toMap, filter, toSet } = Stream;
 
 export class Sheet {
 
@@ -28,7 +29,7 @@ export class Person {
   ) {
     this.id = id;
     this.name = name;
-    this.letter = nvle(letter, name.toUpperCase(), 'Z')?.charAt(0);
+    this.letter = nvle(letter, nvle(name.toUpperCase(), 'Z')?.charAt(0));
   }
 }
 
@@ -95,16 +96,23 @@ export class Row {
   public calc() : void {
 
     this.entries.clear();
-    let self : boolean = anyMatch(this.paidFor, (pf) => eq(pf.id, this.paidBy.id));
-    let cntPf : number = count(this.paidFor);
+
+    let paidFor = filter(this.paidFor, (pf) => neq(pf, SheetService.PERSON_MODEL))
+
+    if (anyMatch(paidFor, (pf) => eq(pf, SheetService.PERSON_ALL))) {
+      paidFor = filter(this.sheet.persons, (pf) => pf.id > -1);
+    }
+
+    let self : boolean = anyMatch(paidFor, (pf) => eq(pf.id, this.paidBy.id));
+    let cntPf : number = count(paidFor);
 
     this.addToSheet(this.paidBy);
 
-    if (!self) {
+    if (!self && count(paidFor) > 0) {
       this.entries.add({ target : this.paidBy, part: "-1", ratio: 1,  due: this.amount * 1 });
     }
 
-    forEach(this.paidFor, (pf) => {
+    forEach(paidFor, (pf) => {
 
       this.addToSheet(pf);
 

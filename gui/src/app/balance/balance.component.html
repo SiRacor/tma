@@ -1,7 +1,5 @@
 <p-toast></p-toast>
 
-<p-contextMenu #personMenu [model]="personMenuItems"></p-contextMenu>
-
 <p-toolbar styleClass="mb-4">
   <ng-template pTemplate="left">
     <button type="button" pButton pRipple icon="pi pi-file" (click)="saveToFile()" class="mr-2" pTooltip="CSV" tooltipPosition="bottom"></button>
@@ -13,71 +11,6 @@
     update="#fu" process="#fu"></p-fileUpload>
   </ng-template>
 </p-toolbar>
-
-<p-card header="Personen">
-  <p-table #dt1 [value]="persons" [(contextMenuSelection)]="selectedPerson"
-  [contextMenu]="personMenu" styleClass="p-datatable-sm"  responsiveLayout="scroll"
-  editMode="row" dataKey="id" [style]="{width:'280px'}" (onRowReorder)="onRowReorder($event)">
-    <ng-template pTemplate="header" let-columns>
-        <tr>
-          <th style="width:20px;"></th>
-          <th>Name</th>
-          <th>Kürzel</th>
-          <th></th>
-        </tr>
-    </ng-template>
-    <ng-template pTemplate="body" let-editing="editing" let-rowData let-pi="rowIndex">
-        <tr [pEditableRow]="rowData" [pContextMenuRow]="rowData" [pReorderableRow]="pi">
-          <td>
-              <span class="pi pi-bars" [pReorderableRowHandle]="pi"></span>
-          </td>
-          <td style="width:80px">
-            <p-cellEditor>
-              <ng-template pTemplate="input">
-                <input pInputText type="text" [(ngModel)]="rowData.name"
-                style="width:60px; margin-left:-0.5rem; margin-top:-0.5rem; margin-top:-0.5rem; margin-bottom:-0.5rem">
-              </ng-template>
-
-              <ng-template pTemplate="output">
-                {{rowData.name}}
-              </ng-template>
-            </p-cellEditor>
-          </td>
-          <td>
-            <p-cellEditor>
-              <ng-template pTemplate="input">
-                <input pInputText type="text" [(ngModel)]="rowData.letter"
-                style="width:30px; margin-left:-0.5rem; margin-top:-0.5rem; margin-top:-0.5rem; margin-bottom:-0.5rem">
-              </ng-template>
-
-              <ng-template pTemplate="output">
-                {{rowData.letter}}
-              </ng-template>
-            </p-cellEditor>
-          </td>
-          <!---->
-          <td style="text-align:center; padding-top:0.1rem; padding-bottom:0.1rem" >
-              <button *ngIf="!editing" pButton pRipple type="button" pInitEditableRow icon="pi pi-pencil" class="p-button-rounded p-button-text"></button>
-              <button *ngIf="!editing" pButton pRipple type="button" (click)="onItemDelete(rowData)" icon="pi pi-times" class="p-button-rounded p-button-text"></button>
-              <button *ngIf="editing" pButton pRipple type="button" pSaveEditableRow icon="pi pi-check" (click)="onItemEditSave(rowData, pi)" class="p-button-rounded p-button-text p-button-success mr-2"></button>
-              <button *ngIf="editing" pButton pRipple type="button" pCancelEditableRow icon="pi pi-times" (click)="onItemEditCancel(rowData, pi)" class="p-button-rounded p-button-text p-button-danger"></button>
-          </td>
-        </tr>
-    </ng-template>
-    <ng-template pTemplate="footer" let-columns>
-      <tr>
-        <td></td>
-        <td></td>
-        <td></td>
-        <td style="text-align:center">
-          <button pButton type="button"icon="pi pi-plus" class="p-button-rounded p-button-text" [label]=""
-          pAddRow [table]="dt1" [newRow]="onPersonNewInit(null)" style="margin-top:-0.5rem; margin-bottom:-0.5rem"></button>
-        </td>
-      </tr>
-    </ng-template>
-
-  </p-table>
-</p-card>
 
 <p-contextMenu #rowMenu [model]="rowMenuItems"></p-contextMenu>
 
@@ -113,9 +46,10 @@
                       dateFormat="{{'dd.mm.yy'}}"
                       placeholder="{{col.delegate.var(rowData).value | date: 'dd.MM.yyyy'}}">
                   </p-calendar>
-                  <p-dropdown *ngSwitchCase="col.type=='person'" [options]="persons" optionLabel="letter" appendTo="body" [(ngModel)]="col.delegate.var(rowData).value"
+                  <p-dropdown *ngSwitchCase="col.type=='person'" [options]="personsReal" optionLabel="letter" appendTo="body" [(ngModel)]="col.delegate.var(rowData).value"
                   ></p-dropdown>
-                  <p-multiSelect *ngSwitchCase="col.type=='persons'" [options]="personsPlusA" optionLabel="letter" [filter]="false" [showToggleAll]="false" [showHeader]="false" appendTo="body" [(ngModel)]="col.delegate.var(rowData).value">
+                  <p-multiSelect *ngSwitchCase="col.type=='persons'" [options]="personsAll" (onChange)="onChange($event, rowData)"
+                     optionLabel="letter" [filter]="false" [showToggleAll]="false" [showHeader]="false" appendTo="body" [(ngModel)]="col.delegate.var(rowData).value">
                   </p-multiSelect>
                   <input *ngSwitchDefault style="width: 80px" pInputText type="text" [(ngModel)]="col.delegate.var(rowData).value">
                   </ng-template>

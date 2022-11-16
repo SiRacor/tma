@@ -13,12 +13,15 @@ export class SheetService {
   public static readonly STORAGE_ID: string = "polycule balance sheet";
   protected sheet!: Sheet;
 
+  static readonly PERSON_ALL = new Person(-1, "Alle", "[A]");
+  static readonly PERSON_MODEL = new Person(-2, "Modell", "[M]");
+
   constructor (public storeBd: StoreBD) {
 
     this.sheet = new Sheet();
 
     this.storeBd = storeBd;
-    let sheetDto = tryGet(storeBd.readAll(), 0);
+    let sheetDto: SheetDTO = tryGet(storeBd.readAll(), 0);
 
     wth(sheetDto, (dto) => {
 
@@ -36,17 +39,22 @@ export class SheetService {
 
   public saveRow(rowDto: RowDTO, sheetId : number, idx?: number) : number {
     let ret: number = this.saveRowInt(rowDto, sheetId, idx);
-    this.storeBd.save(this.read(0));
+
+    let dto = this.read(0);
+    dto.persons = toArray(dto.persons, (p) => p.name !== "Alle" && p.name !== "Modell", (p) => p);
+
+    this.storeBd.save(dto);
     return ret;
   }
 
-  protected saveRowInt(rowDto: RowDTO, sheetId : number, idx?: number) : number {
+  protected saveRowInt(rowDto: RowDTO, sheetId: number, idx?: number) : number {
 
-    let persResolver: (persDto: PersonDTO) => Person = (persDto) =>
-      nvl(
+    let persResolver: (persDto: PersonDTO) => Person = (persDto) => {
+      return nvl(
         findFirst(this.sheet.persons, (pers) => pers.name == persDto.name),
         new Person(persDto.id, persDto.name, persDto.letter)
       );
+    };
 
     let paidBy: Person = persResolver(rowDto.paidBy);
     let paidFor: Person[] = toArray(rowDto.paidFor, persResolver);
@@ -109,6 +117,10 @@ export class SheetService {
 
   protected savePersonInt(personDto: PersonDTO, sheetId: number, idx?: number) : number {
 
+    if (personDto.id && personDto.id < 0) {
+      return personDto.id;
+    }
+
     let person : Person | null = findFirst(this.sheet.persons,
       (pers) => pers.id == personDto.id || eq(pers.letter, personDto.letter)
     );
@@ -169,6 +181,9 @@ export class SheetService {
     let cols : ColDTO[] = new Array();
     let total : Map<PersonDTO, number> = new Map();
     let persons : PersonDTO[] = toArray(this.sheet.persons, (pers) => this.toPersonDTO(pers));
+
+    persons.push(this.toPersonDTO(SheetService.PERSON_ALL),
+    this.toPersonDTO(SheetService.PERSON_MODEL));
 
     let persById : (id: number) => PersonDTO =
       (id: number) => findFirst(persons, (p) => p.id == id);
@@ -328,7 +343,7 @@ export class SheetService {
 
     });
 
-    return { id: this.sheet.id, persons: persons, rows: res, cols: cols, total : total };
+    return SheetDTO.create(this.sheet.id, persons, res, cols, total);
   };
 
   public readSheets(sheetId : number) : SheetDTO[] {
@@ -339,3 +354,5 @@ export class SheetService {
     return { id: person.id, name: person.name, letter: person.letter };
   }
 }
+
+const { PERSON_ALL, PERSON_MODEL } = SheetService;
